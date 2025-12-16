@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signup Page</title>
+
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- LEFT SECTION -->
+    <div class="left">
+      <h1>Welcome!</h1>
+      <h3>Create Your Account</h3>
+      <p>Join us to enjoy exclusive benefits and features.</p>
+
+      <div class="box-container">
+        <div class="box">Step 1: Enter Details</div>
+        <div class="box">Step 2: Verify Email</div>
+        <div class="box">Step 3: Start Using</div>
+      </div>
+    </div>
+
+    <!-- RIGHT SECTION -->
+    <div class="right">
+      <h2>Sign Up</h2>
+
+      <form action="{% url 'Sign_Up' %}" method="POST">
+        {% csrf_token %}
+
+        <!-- USERNAME -->
+        <label for="{{ form.username.id_for_label }}"></label>
+        <input class="name" type="text" name="username" id="id_username"
+               placeholder="Full name" value="{{ form.username.value }}" required />
+
+        {% for error in form.username.errors %}
+          <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+
+
+        <!-- EMAIL -->
+        <label for="{{ form.email.id_for_label }}"></label>
+        <input class="email" type="email" name="{{ form.email.name }}"
+               value="{{ form.email.value }}" placeholder="Email" required />
+
+        {% for error in form.email.errors %}
+          <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+
+
+        <!-- PASSWORDS -->
+        <div class="password-box">
+
+          <!-- PASSWORD 1 -->
+          <label for="{{ form.password1.id_for_label }}"></label>
+          <input class="password" type="password" name="{{ form.password1.name }}"
+                 value="{{ form.password1.value }}" placeholder="Password" required />
+
+          {% for error in form.password1.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+
+
+          <!-- PASSWORD 2 -->
+          <label for="{{ form.password2.id_for_label }}"></label>
+          <input class="password" type="password" name="{{ form.password2.name }}"
+                 value="{{ form.password2.value }}" placeholder="Confirm Password" required />
+
+          {% for error in form.password2.errors %}
+            <span class="text-danger">{{ error }}</span>
+          {% endfor %}
+
+        </div>
+
+        <button class="btn">Sign Up</button>
+      </form>
+
+      <p class="signup">Already have an account?
+        <a href="{% url 'Sign_In' %}">Sign In</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

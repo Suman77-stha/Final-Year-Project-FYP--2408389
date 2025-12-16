@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeAI Dashboard</title>
+  <link rel="stylesheet" href="/static/style_dashboard.css">
+
+</head>
+
+<body>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+      <button  class="sidebar-toggle">⬅️</button>
+      <h1 id="logoText">TradeAI</h1>
+      
+    <nav>
+      <a href="#">📊 <span class="menu-text">Dashboard</span></a>
+      <a href="#">🤖 <span class="menu-text">AI Predictions</span></a>
+      <a href="#">💼 <span class="menu-text">Portfolio</span></a>
+      <a href="#">📈 <span class="menu-text">Analytics</span></a>
+      <a href="#">📰 <span class="menu-text">News</span></a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- Header -->
+    <header>
+      <h2>Dashboard</h2>
+      <div class="notification_profile">
+        <button>🔔</button>
+        <div class="profile">👤</div>
+      </div>
+    </header>
+
+    <!-- Market Overview -->
+    <section class="grid grid-cols-3">
+      <div class="card">
+        <h3>Bitcoin (BTC)</h3>
+        <p style="font-size: 1.25rem; font-weight: bold;">$34,200</p>
+        <p style="color: #22c55e;">+2.3%</p>
+      </div>
+
+      <div class="card">
+        <h3>Ethereum (ETH)</h3>
+        <p style="font-size: 1.25rem; font-weight: bold;">$2,450</p>
+        <p style="color: #ef4444;">-1.1%</p>
+      </div>
+
+      <div class="card">
+        <h3>S&P 500</h3>
+        <p style="font-size: 1.25rem; font-weight: bold;">4,500</p>
+        <p style="color: #22c55e;">+0.8%</p>
+      </div>
+      <div class="card">
+        <h3>S&P 500</h3>
+        <p style="font-size: 1.25rem; font-weight: bold;">4,500</p>
+        <p style="color: #22c55e;">+0.8%</p>
+      </div>
+    </section>
+
+    <!-- AI Predictions Chart -->
+    <section class="card">
+      <h3>AI Price Prediction</h3>
+      <img src="https://via.placeholder.com/800x300?text=Line+Chart+Placeholder"
+           alt="AI Price Prediction Chart">
+    </section>
+
+    <!-- Portfolio Snapshot -->
+    <section class="card">
+      <h3>Portfolio</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th>Amount</th>
+            <th>Current Value</th>
+            <th>AI Suggestion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>BTC</td>
+            <td>1.2</td>
+            <td>$41,040</td>
+            <td class="text-green">Buy</td>
+          </tr>
+          <tr>
+            <td>ETH</td>
+            <td>5</td>
+            <td>$12,250</td>
+            <td class="text-red">Hold</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+</body>
+<script>
+  const sidebar = document.getElementById("sidebar");
+  const toggleBtn = document.querySelector(".sidebar-toggle"); // fixed
+  const logoText = document.getElementById("logoText");
+  const menuText = document.querySelectorAll(".menu-text");
+
+  toggleBtn.addEventListener("click", () => {
+    sidebar.classList.toggle("sidebar-collapsed");
+
+    // Change arrow direction
+    if (sidebar.classList.contains("sidebar-collapsed")) {
+      toggleBtn.textContent = "➡️";
+      logoText.style.display = "none";
+      menuText.forEach(t => t.style.display = "none");
+    } else {
+      toggleBtn.textContent = "⬅️";
+      logoText.style.display = "block";
+      menuText.forEach(t => t.style.display = "block");
+    }
+  });
+</script>
+
+</html>
