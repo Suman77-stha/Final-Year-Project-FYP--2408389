@@ -3,9 +3,6 @@ from django.http import JsonResponse
 from FYP_app.models import StockData
 from datetime import datetime
 import requests
-import logging
-
-logger = logging.getLogger(__name__)
 
 def get_stock_data(symbol="AAPL"):
     api_key = settings.ALPHA_VANTAGE_KEY
@@ -15,7 +12,6 @@ def get_stock_data(symbol="AAPL"):
         response = requests.get(url, timeout=10)
         response.raise_for_status()
     except requests.RequestException as e:
-        logger.error(f"Error fetching data for {symbol}: {e}")
         return JsonResponse({"success": False, "error": str(e)})
 
     data = response.json().get("Global Quote", {})
@@ -35,7 +31,6 @@ def get_stock_data(symbol="AAPL"):
     # Avoid duplicates
     if StockData.objects.filter(symbol=symbol, date=trading_day).exists():
         message = f"Data for {symbol} on {trading_day} already exists."
-        logger.info(message)
         return JsonResponse({"success": True, "message": message, "date": str(trading_day)})
 
     # Safely parse numeric values
@@ -63,7 +58,6 @@ def get_stock_data(symbol="AAPL"):
         change_percent=data.get("10. change percent", "0%")
     )
     stock.save()
-    logger.info(f"Saved {symbol} data for {trading_day}")
 
     return JsonResponse({
         "success": True,
