@@ -1,0 +1,196 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: whitesmoke;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* LOGIN CONTAINER */
+.container {
+  width: 900px;
+  height: 520px;
+  background: rgba(188, 188, 188, 0.633);
+  display: flex;
+  border-radius: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+/* LEFT PANEL */
+.left {
+  flex: 1;
+  padding: 40px;
+  margin-top: 30px;
+  text-align: center;
+}
+
+.left h1 {
+  font-size: 50px;
+  margin: 0;
+  color: #4f5957;
+}
+
+.left h3 {
+  margin-top: 10px;
+  color: #464c4d;
+}
+
+/* RIGHT PANEL */
+.right {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.right h2 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* INPUT BOXES */
+input {
+  width: 85%;
+  padding: 10px;
+  margin: 12px auto;
+  display: block;
+
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+
+  background: rgba(255, 255, 255, 0.3);
+  color: black;
+  font-size: 16px;
+
+  outline: none;
+}
+
+input::placeholder {
+  color: #2c2c2c;
+}
+
+input:focus {
+  border-color: #000000;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* REMEMBER + FORGOT PASSWORD (FIXED LAYOUT) */
+.remember-row {
+  width: 85%;
+  margin: 3px auto 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remember-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: black;
+}
+
+.check {
+  width: 15px;   /* optional, keeps it square */
+  height: 15px;
+  transform: scale(1.5);   /* increase size (1 = normal, 1.5 = 50% bigger) */
+  accent-color: #0d9488;   /* optional: color of checkbox */
+  cursor: pointer;
+}
+
+
+.forget {
+  color: #1c1c1c;
+  text-decoration: none;
+  margin-left: 10px;
+}
+
+.forget:hover {
+  text-decoration: underline;
+}
+
+/* LOGIN BUTTON */
+.btn {
+  width: 85%;
+  padding: 14px;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  margin: 20px auto;
+  background: #0d9488;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  display: block;
+}
+
+.btn:hover {
+  background: #14b8a6;
+}
+
+/* SIGNUP */
+.signup {
+  text-align: center;
+  margin-top: 20px;
+}
+/* Sign up Pages */
+/* LEFT SIDE BOXES */
+.box-container {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.box {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  color: #1c1c1c;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+/* NAME INPUT (if needed separately) */
+input.name {
+  width: 85%;
+  padding: 10px;
+  margin: 12px auto;
+  display: block;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  color: black;
+  font-size: 16px;
+  outline: none;
+}
+
+input.name::placeholder {
+  color: #2c2c2c;
+}
+input.name:focus {
+  border-color: #000000;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Password box adjustments for eye icon (focus only) */
+.password-box .eye {
+  opacity: 0;
+}
+
+.password-box input:focus + .eye {
+  opacity: 1;
+}
+.text-danger {
+    color: red;
+    font-size: 14px;
+    display: block;
+    margin-top: 5px;
+    margin-bottom: -5px; /* keeps spacing tight */
+}
