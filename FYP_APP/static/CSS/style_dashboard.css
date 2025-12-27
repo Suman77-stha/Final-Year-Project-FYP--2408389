@@ -1,4 +1,12 @@
-    /* Sidebar */
+    .dashboard-container {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh; /* full screen height */
+  background-color: #ececec; /* optional */
+  width: 100vw;
+}
+
+/* Sidebar */
     aside { 
       width: 220px; /* default expanded */
       background-color: white;

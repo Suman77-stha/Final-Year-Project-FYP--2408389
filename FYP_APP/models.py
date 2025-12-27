@@ -1,6 +1,17 @@
 from django.db import models
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django import forms
 
-class StockData(models.Model):
+class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
+
+
+class Stock_Data(models.Model):
     symbol = models.CharField(max_length=10)
     date = models.DateField()
     open_price = models.FloatField()

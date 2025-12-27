@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.http import JsonResponse
-from FYP_app.models import StockData
+from FYP_APP.models import Stock_Data
 from datetime import datetime
 import requests
 
@@ -29,7 +29,7 @@ def get_stock_data(symbol="AAPL"):
         return JsonResponse({"success": False, "message": f"Invalid date format for {symbol}: {trading_day_str}"})
 
     # Avoid duplicates
-    if StockData.objects.filter(symbol=symbol, date=trading_day).exists():
+    if Stock_Data.objects.filter(symbol=symbol, date=trading_day).exists():
         message = f"Data for {symbol} on {trading_day} already exists."
         return JsonResponse({"success": True, "message": message, "date": str(trading_day)})
 
@@ -46,7 +46,7 @@ def get_stock_data(symbol="AAPL"):
         except (TypeError, ValueError):
             return 0
 
-    stock = StockData(
+    stock = stock(
         symbol=data.get("01. symbol", symbol),
         date=trading_day,
         open_price=safe_float(data.get("02. open")),

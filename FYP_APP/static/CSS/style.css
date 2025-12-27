@@ -1,13 +1,17 @@
-body {
+html body{
   margin: 0;
+  padding: 0;
   font-family: Arial, sans-serif;
-  background-color: whitesmoke;
-  height: 100vh;
+  background-color: whitesmoke; 
+  
+}
+.main_contain{
   display: flex;
+  width: 100vw;
+   height: 100vh;
   justify-content: center;
   align-items: center;
 }
-
 /* LOGIN CONTAINER */
 .container {
   width: 900px;

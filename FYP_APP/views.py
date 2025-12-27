@@ -1,49 +1,101 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from FYP_APP.function import get_stock_data
-
-def Forget_Password(request):
-    if request.method == 'POST':
-        form= request.post
-        if form.is_valid():
-            return redirect()
-
-    return redirect('ForgetPassword.html')
+from django.contrib.auth import views as auth_views
+from FYP_APP.models import CustomUserCreationForm
 
 
-# ---------------- SIGN UP VIEW ----------------
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.conf import settings
+
+
+
+def forgot_password(request):
+    if request.method == "POST":
+        email = request.POST.get('email')
+        print(email)
+        if User.objects.filter(email = email).exists():
+            print(email)
+            user = User.objects.get(email = email)
+            print("User Exists")
+            send_mail('Hi',f'user:{user.username},\n\nClick the link below to reset your password:\nhttp://127.0.0.1:8000/password_reset_confirm/{user}',settings.EMAIL_HOST_USER,[email],fail_silently=False)
+            return redirect('password_reset_done')
+        else:
+            print('User Doesnt exit')
+            return render(request, 'forgetPassword.html')
+    else:
+        print('suman 2')
+        return render(request, 'forgetPassword.html')
+
+                
+
+def password_Reset_Done_View(request):
+    return redirect('password_reset_done')
+       
+           
+
+
+def password_reset_confirm(request, user):
+    userid = User.objects.get(username = user)
+    print("user id: ",userid)
+    if request.method == "POST":
+        pass1  = request.POST.get("password1")
+        pass2  = request.POST.get("password2")
+        if pass1 == pass2:
+            userid.set_password(pass1)
+            userid.save()
+            # return HttpResponse("password Reset")
+    
+
+    return render(request, 'password_reset_confirm.html')
+
+
+def password_reset_complete_view(request):
+    return redirect('password_reset_complete.html')
+
+
+# # ---------------- SIGN UP VIEW ----------------
 def SignUp_View(request):
-    # Check if user submitted the form (POST request)
     if request.method == 'POST':
-        # Create a UserCreationForm using posted data
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
 
-        # Check if form inputs are valid
         if form.is_valid():
-            # Save the user to the database
+            username = request.POST.get("username")
+            email = request.POST.get("email")
+            pass1 = request.POST.get("password1")
+            pass2 = request.POST.get("password2")
+
+            if pass1 != pass2:
+                return render(request, 'Sign_Up.html', {
+                    'form': form,
+                    'error': 'Passwords do not match'
+                })
+
+            if User.objects.filter(username=username).exists():
+                return render(request, 'Sign_Up.html', {
+                    'form': form,
+                    'error': f'Username "{username}" already exists'
+                })
+
+            if User.objects.filter(email=email).exists():
+                return render(request, 'Sign_Up.html', {
+                    'form': form,
+                    'error': f'Email "{email}" already exists'
+                })
+
+            # ✅ Save user
             user = form.save()
-
-            # Log in the newly registered user automatically
             login(request, user)
-
-            # Redirect to dashboard page
             return redirect('dashboard')
 
     else:
-        # Initial empty values for form fields
-        initial_data = {'username': '', 'password1': '', 'password2': ""}
+        form = CustomUserCreationForm()
 
-        # If normal GET request → show empty form
-        form = UserCreationForm(initial=initial_data)
-
-    # Render registration page with form
     return render(request, 'Sign_Up.html', {'form': form})
-
-
-
 # ---------------- SIGN IN VIEW ----------------
 def Sign_In_view(request):
     # If form submitted (POST request)
@@ -92,3 +144,4 @@ def logout_view(request):
 
 def stock(request):
     return(get_stock_data())
+
