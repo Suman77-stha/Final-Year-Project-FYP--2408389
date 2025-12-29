@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from FYP_APP.models import New_Stock_Data
 
 
