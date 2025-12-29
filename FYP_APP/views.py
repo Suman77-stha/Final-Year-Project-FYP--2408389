@@ -1,11 +1,13 @@
+from datetime import date
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from FYP_APP.function import get_stock_data
 from django.contrib.auth import views as auth_views
 from FYP_APP.models import CustomUserCreationForm
+
+
 
 
 from django.contrib.auth.models import User
@@ -30,15 +32,10 @@ def forgot_password(request):
     else:
         print('suman 2')
         return render(request, 'forgetPassword.html')
-
-                
-
+       
 def password_Reset_Done_View(request):
     return redirect('password_reset_done')
        
-           
-
-
 def password_reset_confirm(request, user):
     userid = User.objects.get(username = user)
     print("user id: ",userid)
@@ -53,10 +50,8 @@ def password_reset_confirm(request, user):
 
     return render(request, 'password_reset_confirm.html')
 
-
 def password_reset_complete_view(request):
     return redirect('password_reset_complete.html')
-
 
 # # ---------------- SIGN UP VIEW ----------------
 def SignUp_View(request):
@@ -123,14 +118,41 @@ def Sign_In_view(request):
 
     # Render login page with form
     return render(request, 'Sign_In.html', {'form': form})
-
-
-
 # ---------------- DASHBOARD VIEW ----------------
 def dashboard_view(request):
-    # Simply render the dashboard template
-    return render(request, 'Dashboard.html')
+    from FYP_APP.function import stock_data_from_api,stock_data_from_database
+    from FYP_APP.models import New_Stock_Data
+    # 1️⃣ Get symbol from search or default
+    symbol = request.GET.get("symbol", "BTC")
+    nepal_dt = stock_data_from_api(symbol)
 
+    # 2️⃣ Check if today’s data exists in DB
+    stock_data = New_Stock_Data.objects.filter(symbol=symbol, nepal_dt=nepal_dt).first()
+
+    # 4️⃣ Recommended symbols for cards (optional: show latest DB data even if not today)
+    recommended_symbols = ['BTC', 'ETH', 'API', 'AAPL']
+    all_data = {}
+    for s in recommended_symbols:
+        # Check for today's data
+        data = New_Stock_Data.objects.filter(symbol=s, nepal_dt=nepal_dt).first()
+        if not data:
+            # If not available, fetch from API (or fallback to latest available)
+            nepal_dt = stock_data_from_api(symbol)
+            data = stock_data_from_database(nepal_dt,s)
+        all_data[s] = data
+
+    # 5️⃣ Recent searches (session)
+    recent_symbols = request.session.get('recent_symbols', [])
+    if symbol not in recent_symbols:
+        recent_symbols.insert(0, symbol)
+        request.session['recent_symbols'] = recent_symbols[:5]
+
+    return render(request, "dashboard.html", {
+        "data": all_data,
+        "current_symbol": symbol,
+        "recent_symbols": recent_symbols,
+        "stock_data": stock_data
+    })
 
 
 # ---------------- LOGOUT VIEW ----------------
@@ -142,6 +164,4 @@ def logout_view(request):
     return redirect('Sign_In')
 
 
-def stock(request):
-    return(get_stock_data())
 

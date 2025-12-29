@@ -11,9 +11,10 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('username', 'email', 'password1', 'password2')
 
 
-class Stock_Data(models.Model):
+class New_Stock_Data(models.Model):
     symbol = models.CharField(max_length=10)
-    date = models.DateField()
+    nepal_dt = models.DateField()
+    utc_dt = models.DateField()
     open_price = models.FloatField()
     high_price = models.FloatField()
     low_price = models.FloatField()
@@ -23,4 +24,4 @@ class Stock_Data(models.Model):
     change_percent = models.CharField(max_length=20)
 
     def __str__(self):
-        return f"{self.symbol} - {self.date}"
+        return f"{self.symbol} - {self.nepal_dt}"

@@ -1,75 +1,79 @@
-from django.conf import settings
-from django.http import JsonResponse
-from FYP_APP.models import Stock_Data
-from datetime import datetime
-import requests
+from FYP_APP.models import New_Stock_Data
 
-def get_stock_data(symbol="AAPL"):
-    api_key = settings.ALPHA_VANTAGE_KEY
-    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
+
+def stock_data_from_api(symbol):
+    """
+    Fetch stock data from Finnhub API and return JSON.
+    This function can be called directly from urls.py.
+    """
+    import requests
+    import datetime,pytz
+    from django.conf import settings
 
     try:
-        response = requests.get(url, timeout=10)
+        # Call Finnhub API
+        response = requests.get("https://finnhub.io/api/v1/quote",params={"symbol": symbol, "token": settings.FINNHUB_API_KEY})
         response.raise_for_status()
+        data = response.json()
+        print(data)
+        if data and data.get('t'):
+            timestamp = data['t']
+            # converting Unix timestamp to date
+            utc_dt = datetime.datetime.utcfromtimestamp(timestamp).replace(tzinfo=pytz.utc)
+            nepal_dt = utc_dt.astimezone(pytz.timezone("Asia/Kathmandu"))
+            if  not New_Stock_Data.objects.filter(symbol=symbol , nepal_dt=nepal_dt.date()).exists():
+                stock = New_Stock_Data.objects.create(
+                    symbol = symbol,
+                    utc_dt = utc_dt.date(),
+                    nepal_dt = nepal_dt.date(),
+                    open_price=data['o'],
+                    high_price=data['h'],
+                    low_price=data['l'],
+                    close_price=data['c'],
+                    change=data['d'],
+                    volume = 0,
+                    change_percent=f"{data['dp']*100:.2f}%"
+                    )
+                stock.save()
+                # Print to terminal
+                print(f"new data of Stock with different symbol or date for {symbol}: {data}")    
+            else:
+                print("Data already exist in database")
+        else:
+            print("No valid data from API")
+            return None
+        return (nepal_dt.date())
     except requests.RequestException as e:
-        return JsonResponse({"success": False, "error": str(e)})
-
-    data = response.json().get("Global Quote", {})
-
-    if not data:
-        return JsonResponse({"success": False, "message": f"No data returned for {symbol}"})
-
-    trading_day_str = data.get("07. latest trading day")
-    if not trading_day_str:
-        return JsonResponse({"success": False, "message": f"Latest trading day not found for {symbol}"})
-
-    try:
-        trading_day = datetime.strptime(trading_day_str, "%Y-%m-%d").date()
-    except ValueError:
-        return JsonResponse({"success": False, "message": f"Invalid date format for {symbol}: {trading_day_str}"})
-
-    # Avoid duplicates
-    if Stock_Data.objects.filter(symbol=symbol, date=trading_day).exists():
-        message = f"Data for {symbol} on {trading_day} already exists."
-        return JsonResponse({"success": True, "message": message, "date": str(trading_day)})
-
-    # Safely parse numeric values
-    def safe_float(val):
-        try:
-            return float(val)
-        except (TypeError, ValueError):
-            return 0.0
-
-    def safe_int(val):
-        try:
-            return int(val)
-        except (TypeError, ValueError):
-            return 0
-
-    stock = stock(
-        symbol=data.get("01. symbol", symbol),
-        date=trading_day,
-        open_price=safe_float(data.get("02. open")),
-        high_price=safe_float(data.get("03. high")),
-        low_price=safe_float(data.get("04. low")),
-        close_price=safe_float(data.get("05. price")),
-        volume=safe_int(data.get("06. volume")),
-        change=safe_float(data.get("09. change")),
-        change_percent=data.get("10. change percent", "0%")
+        print(f"Error fetching stock data: {e}")
+        return None
+    
+def stock_data_from_database(nepal_dt,symbol):
+    """
+    Fetch stock data from database and return JSON.
+    This function can be called directly from urls.py.
+    """
+    stock_data = (
+        New_Stock_Data.objects.filter(symbol=symbol, nepal_dt=nepal_dt).order_by("-nepal_dt").first()
     )
-    stock.save()
+           
+    if stock_data:
+        print("Data exist")
+        return ({
+            "symbol": stock_data.symbol,
+            "date": stock_data.nepal_dt,
+            "open": stock_data.open_price,
+            "high": stock_data.high_price,
+            "low": stock_data.low_price,
+            "close": stock_data.close_price,
+            "change": stock_data.change,
+            "change_percent": stock_data.change_percent,
+            "source": "database"
+        })
+    return None
 
-    return JsonResponse({
-        "success": True,
-        "symbol": symbol,
-        "date": str(trading_day),
-        "data": {
-            "open": stock.open_price,
-            "high": stock.high_price,
-            "low": stock.low_price,
-            "close": stock.close_price,
-            "volume": stock.volume,
-            "change": stock.change,
-            "change_percent": stock.change_percent
-        }
-    })
+    
+    
+
+
+
+

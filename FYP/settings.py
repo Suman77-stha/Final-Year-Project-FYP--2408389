@@ -138,7 +138,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-ALPHA_VANTAGE_KEY = "0FXDSV6LZGTE5ZHM"
+FINNHUB_API_KEY = "d5925c9r01qvj8ijk49gd5925c9r01qvj8ijk4a0"
 
 # email configs
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

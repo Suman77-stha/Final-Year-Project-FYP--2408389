@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% block title %} Dashboard {% endblock title%}
 {% block content %}
+
 <div class="dashboard-container">
+
   <!-- Sidebar -->
   <aside id="sidebar">
-      <button  class="sidebar-toggle">⬅️</button>
-      <h1 id="logoText">TradeAI</h1>
-      
+    <button class="sidebar-toggle">⬅️</button>
+    <h1 id="logoText">TradeAI</h1>
     <nav>
       <a href="#">📊 <span class="menu-text">Dashboard</span></a>
       <a href="#">🤖 <span class="menu-text">AI Predictions</span></a>
@@ -28,37 +29,38 @@
       </div>
     </header>
 
-    <!-- Market Overview -->
+    <!-- Search bar with dropdown -->
+    <form method="get" style="margin-bottom:1rem;">
+      <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
+      <datalist id="recentList">
+        {% for s in recent_symbols %}
+          <option value="{{ s }}">
+        {% endfor %}
+      </datalist>
+      <button type="submit">Search</button>
+    </form>
+
+    <!-- Market Overview Cards -->
     <section class="grid grid-cols-3">
-      <div class="card">
-        <h3>Bitcoin (BTC)</h3>
-        <p style="font-size: 1.25rem; font-weight: bold;">$34,200</p>
-        <p style="color: #22c55e;">+2.3%</p>
-      </div>
-
-      <div class="card">
-        <h3>Ethereum (ETH)</h3>
-        <p style="font-size: 1.25rem; font-weight: bold;">$2,450</p>
-        <p style="color: #ef4444;">-1.1%</p>
-      </div>
-
-      <div class="card">
-        <h3>S&P 500</h3>
-        <p style="font-size: 1.25rem; font-weight: bold;">4,500</p>
-        <p style="color: #22c55e;">+0.8%</p>
-      </div>
-      <div class="card">
-        <h3>S&P 500</h3>
-        <p style="font-size: 1.25rem; font-weight: bold;">4,500</p>
-        <p style="color: #22c55e;">+0.8%</p>
-      </div>
+      {% for key, stock in data.items %}
+      <a href="?symbol={{ key }}">
+        <div class="card">
+          <h3>{{ key }}</h3>
+          <p style="font-size:1.25rem; font-weight:bold;">
+            {% if stock %} ${{ stock.close_price }} {% else %} NA {% endif %}
+          </p>
+          <p style="color:#22c55e;">
+            {% if stock %} ${{ stock.change }} {% else %} NA {% endif %}
+          </p>
+        </div>
+      </a>
+      {% endfor %}
     </section>
 
     <!-- AI Predictions Chart -->
     <section class="card">
       <h3>AI Price Prediction</h3>
-      <img src="https://via.placeholder.com/800x300?text=Line+Chart+Placeholder"
-           alt="AI Price Prediction Chart">
+      <img src="https://via.placeholder.com/800x300?text=Line+Chart+Placeholder" alt="AI Chart">
     </section>
 
     <!-- Portfolio Snapshot -->
@@ -91,6 +93,6 @@
     </section>
 
   </main>
-  </div>
+</div>
 
- {% endblock content %}
+{% endblock content %}
