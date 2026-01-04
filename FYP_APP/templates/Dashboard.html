@@ -1,18 +1,17 @@
 {% extends "base.html" %}
 {% block title %} Dashboard {% endblock title%}
-{% block content %}
 
+{% block content %}
 <div class="dashboard-container">
 
   <!-- Sidebar -->
   <aside id="sidebar">
-    <button class="sidebar-toggle">⬅️</button>
     <h1 id="logoText">TradeAI</h1>
     <nav>
       <a href="#">📊 <span class="menu-text">Dashboard</span></a>
       <a href="#">🤖 <span class="menu-text">AI Predictions</span></a>
       <a href="#">💼 <span class="menu-text">Portfolio</span></a>
-      <a href="#">📈 <span class="menu-text">Analytics</span></a>
+      <a href="#">📈 <span class="menu-text">Prediction</span></a>
       <a href="#">📰 <span class="menu-text">News</span></a>
     </nav>
   </aside>
@@ -23,74 +22,111 @@
     <!-- Header -->
     <header>
       <h2>Dashboard</h2>
+      <!-- Search bar with dropdown -->
+      <form class='search' method="GET" style="margin-bottom:1rem;">
+        <input class='search_bar' type="text" name="symbol" placeholder="Search symbol..." list="recentList">
+        <datalist id="recentList">
+          {% for s in recent_symbols %}
+            <option value="{{ s }}">
+          {% endfor %}
+        </datalist>
+        <button type="submit">Search</button>
+      </form>
       <div class="notification_profile">
         <button>🔔</button>
         <div class="profile">👤</div>
       </div>
     </header>
 
-    <!-- Search bar with dropdown -->
-    <form method="get" style="margin-bottom:1rem;">
-      <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
-      <datalist id="recentList">
-        {% for s in recent_symbols %}
-          <option value="{{ s }}">
-        {% endfor %}
-      </datalist>
-      <button type="submit">Search</button>
-    </form>
-
     <!-- Market Overview Cards -->
-    <section class="grid grid-cols-3">
+    <section class="grid">
       {% for key, stock in data.items %}
-      <a href="?symbol={{ key }}">
-        <div class="card">
-          <h3>{{ key }}</h3>
-          <p style="font-size:1.25rem; font-weight:bold;">
-            {% if stock %} ${{ stock.close_price }} {% else %} NA {% endif %}
-          </p>
-          <p style="color:#22c55e;">
-            {% if stock %} ${{ stock.change }} {% else %} NA {% endif %}
-          </p>
-        </div>
-      </a>
+      <div class="card">
+        <h3><a href="?symbol={{ key }}">{{ key }}</a></h3>
+        <p style="font-size:1.25rem; font-weight:bold;">
+          {% if stock %} Price: ${{ stock.close_price }} {% else %} NA {% endif %}
+        </p>
+        <p>
+          {% if stock %}
+            {% if stock.change > 0 %}
+              <span style="color: #22c55e">{{ stock.change }} ↑</span>
+            {% else %}
+              <span style="color: #ef4444">{{ stock.change }} ↓</span>
+            {% endif %}
+          {% else %}NA{% endif %}
+        </p>
+      </div>
       {% endfor %}
     </section>
 
-    <!-- AI Predictions Chart -->
-    <section class="card">
-      <h3>AI Price Prediction</h3>
-      <img src="https://via.placeholder.com/800x300?text=Line+Chart+Placeholder" alt="AI Chart">
-    </section>
+    <div class="content">
+      <!-- AI Predictions Chart -->
+      <section class="card_ai">
+        <h3>AI Price Prediction</h3>
+        <img src="https://www.everviz.com/chart-examples/financial-and-stock-charts/visualize-stock-performance/" 
+             alt="AI Chart">
+      </section>
 
-    <!-- Portfolio Snapshot -->
-    <section class="card">
-      <h3>Portfolio</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Asset</th>
-            <th>Amount</th>
-            <th>Current Value</th>
-            <th>AI Suggestion</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>BTC</td>
-            <td>1.2</td>
-            <td>$41,040</td>
-            <td class="text-green">Buy</td>
-          </tr>
-          <tr>
-            <td>ETH</td>
-            <td>5</td>
-            <td>$12,250</td>
-            <td class="text-red">Hold</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+      <!-- Right Container -->
+      <div class="right_contain">
+        <!-- Stock Details -->
+        <section class="amount">
+          <div class="Opening_balance">
+            <h4>Opening Balance</h4>
+            <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p>
+          </div>
+          <div class="Today_investment">
+            <h4>Today Investment</h4>
+            <p id="today_investment">$0.00</p>
+          </div>
+          <div class="closing_balance">
+            <h4>Closing Balance</h4>
+            <p id="closing_balance">$0.00</p>
+          </div>
+        </section>
+
+        <!-- Buy/Sell Buttons -->
+        <form class="trade_buttons" method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="symbol" id="trade_symbol">
+          <button type="submit" name="action" value="buy" class="buy_btn">BUY</button>
+          <button type="submit" name="action" value="sell" class="sell_btn">SELL</button>
+        </form>
+
+        <!-- Portfolio Snapshot -->
+        <section class="card_data">
+          <h3>Latest Transaction</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Current Price</th>
+                <th>Change %</th>
+                <th>AI Suggestion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for key, stock in data.items %}
+              <tr>
+                <td>{{ key }}</td>
+                <td>{% if stock %}${{ stock.close_price }}{% else %}NA{% endif %}</td>
+                <td>
+                  {% if stock %}
+                    {% if stock.change_percent > 0 %}
+                      <span style="color: #22c55e">{{ stock.change_percent|floatformat:2 }}% ↑</span>
+                    {% else %}
+                      <span style="color: #ef4444">{{ stock.change_percent|floatformat:2 }}% ↓</span>
+                    {% endif %}
+                  {% else %}NA{% endif %}
+                </td>
+                <td class="text-green">Buy</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </div>
 
   </main>
 </div>
