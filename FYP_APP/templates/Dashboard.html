@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %} Dashboard {% endblock title%}
+{% block title %} Dashboard {% endblock title %}
 
 {% block content %}
 <div class="dashboard-container">
@@ -22,9 +22,10 @@
     <!-- Header -->
     <header>
       <h2>Dashboard</h2>
-      <!-- Search bar with dropdown -->
-      <form class='search' method="GET" style="margin-bottom:1rem;">
-        <input class='search_bar' type="text" name="symbol" placeholder="Search symbol..." list="recentList">
+
+      <!-- Search bar -->
+      <form class="search" method="GET" style="margin-bottom:1rem;">
+        <input class="search_bar" type="text" name="symbol" placeholder="Search symbol..." list="recentList">
         <datalist id="recentList">
           {% for s in recent_symbols %}
             <option value="{{ s }}">
@@ -32,6 +33,7 @@
         </datalist>
         <button type="submit">Search</button>
       </form>
+
       <div class="notification_profile">
         <button>🔔</button>
         <div class="profile">👤</div>
@@ -53,39 +55,42 @@
             {% else %}
               <span style="color: #ef4444">{{ stock.change }} ↓</span>
             {% endif %}
-          {% else %}NA{% endif %}
+          {% else %} NA {% endif %}
         </p>
       </div>
       {% endfor %}
     </section>
 
     <div class="content">
+
       <!-- AI Predictions Chart -->
       <section class="card_ai">
         <h3>AI Price Prediction</h3>
-        <img src="https://www.everviz.com/chart-examples/financial-and-stock-charts/visualize-stock-performance/" 
-             alt="AI Chart">
+        <div id="forecastChart" style="width:100%; height:100%;"></div>
       </section>
 
       <!-- Right Container -->
       <div class="right_contain">
-        <!-- Stock Details -->
+
+        <!-- Balance Info -->
         <section class="amount">
           <div class="Opening_balance">
             <h4>Opening Balance</h4>
             <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p>
           </div>
+
           <div class="Today_investment">
             <h4>Today Investment</h4>
             <p id="today_investment">$0.00</p>
           </div>
+
           <div class="closing_balance">
             <h4>Closing Balance</h4>
             <p id="closing_balance">$0.00</p>
           </div>
         </section>
 
-        <!-- Buy/Sell Buttons -->
+        <!-- Buy / Sell -->
         <form class="trade_buttons" method="POST">
           {% csrf_token %}
           <input type="hidden" name="symbol" id="trade_symbol">
@@ -93,7 +98,7 @@
           <button type="submit" name="action" value="sell" class="sell_btn">SELL</button>
         </form>
 
-        <!-- Portfolio Snapshot -->
+        <!-- Latest Transactions -->
         <section class="card_data">
           <h3>Latest Transaction</h3>
           <table>
@@ -113,11 +118,15 @@
                 <td>
                   {% if stock %}
                     {% if stock.change_percent > 0 %}
-                      <span style="color: #22c55e">{{ stock.change_percent|floatformat:2 }}% ↑</span>
+                      <span style="color:#22c55e">
+                        {{ stock.change_percent|floatformat:2 }}% ↑
+                      </span>
                     {% else %}
-                      <span style="color: #ef4444">{{ stock.change_percent|floatformat:2 }}% ↓</span>
+                      <span style="color:#ef4444">
+                        {{ stock.change_percent|floatformat:2 }}% ↓
+                      </span>
                     {% endif %}
-                  {% else %}NA{% endif %}
+                  {% else %} NA {% endif %}
                 </td>
                 <td class="text-green">Buy</td>
               </tr>
@@ -125,10 +134,54 @@
             </tbody>
           </table>
         </section>
+
       </div>
     </div>
 
   </main>
 </div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+  const graphData = JSON.parse('{{ lstm_graph_data|escapejs }}');
+
+  if (
+    graphData &&
+    graphData.historical &&
+    graphData.predicted
+  ) {
+    const historicalTrace = {
+      x: graphData.historical.dates,
+      y: graphData.historical.prices,
+      mode: "lines",
+      name: "Actual Price",
+      line: { width: 2 }
+    };
+
+    const predictedTrace = {
+      x: graphData.predicted.dates,
+      y: graphData.predicted.prices,
+      mode: "lines",
+      name: "LSTM Prediction",
+      line: { width: 2, dash: "dot" }
+    };
+
+    Plotly.newPlot(
+      "forecastChart",
+      [historicalTrace, predictedTrace],
+      {
+        title: "LSTM Price Prediction",
+        xaxis: { title: "Date", type: "date" },
+        yaxis: { title: "Price ($)" },
+        hovermode: "x unified"
+      },
+      { responsive: true }
+    );
+  } else {
+    document.getElementById("forecastChart").innerHTML =
+      "<p style='text-align:center;color:red;'>No prediction data available</p>";
+  }
+</script>
 
 {% endblock content %}
