@@ -89,191 +89,192 @@ def Sign_In_view(request):
     return render(request, 'Sign_In.html', {'form': form})
 
 # views.py
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from django.db.models import Sum
 from django.conf import settings
 
 import json
 import datetime
 import pytz
-import requests
 
-from .models import New_Stock_Data, Watchlist, Transaction, Wallet
-from .function import get_lstm_graph
-
+from .models import CustomUserCreationForm, New_Stock_Data, Watchlist, Transaction, Wallet
+from .StockAPI import get_stock_data
+from django.core.cache import cache
 
 @login_required(login_url='Sign_In')
+
 def dashboard_view(request):
 
     # ---------------- SYMBOL & PERIOD ----------------
     search_symbol = request.GET.get('symbol', 'BTC').upper()
     period = request.GET.get('period', '1y')
 
-    PERIOD_MAP = {
-        "1w": 7,
-        "2w": 14,
-        "3w": 21,
-        "1m": 30,
-        "3m": 90,
-        "5m": 150,
-        "1y": 365,
-    }
+    nepal_tz = pytz.timezone("Asia/Kathmandu")
+    today = datetime.datetime.now(nepal_tz).date()
 
-    future_days = PERIOD_MAP.get(period, 30)
+    cache_key = f"stock_{search_symbol}_{today}"
 
-    api_data = {}
-    nepal_dt = None
+    # ---------------- STOCK DATA (CACHED) ----------------
+    stock_data = cache.get(cache_key)
 
-    # ---------------- FETCH LIVE PRICE ----------------
-    try:
-        response = requests.get(
-            "https://finnhub.io/api/v1/quote",
-            params={
-                "symbol": search_symbol,
-                "token": settings.FINNHUB_API_KEY
-            },
-            timeout=10
-        )
-        response.raise_for_status()
-        api_data = response.json()
-    except Exception as e:
-        print("API error:", e)
-
-    # ---------------- SAVE STOCK DATA ----------------
-    if api_data.get("t"):
-        utc_dt = datetime.datetime.utcfromtimestamp(
-            api_data["t"]
-        ).replace(tzinfo=pytz.utc)
-
-        nepal_dt = utc_dt.astimezone(
-            pytz.timezone("Asia/Kathmandu")
-        )
-
-        New_Stock_Data.objects.update_or_create(
+    if not stock_data:
+        # Try DB
+        stock_data = New_Stock_Data.objects.filter(
             symbol=search_symbol,
-            nepal_dt=nepal_dt.date(),
-            defaults={
-                "utc_dt": utc_dt.date(),
-                "open_price": api_data.get("o", 0),
-                "high_price": api_data.get("h", 0),
-                "low_price": api_data.get("l", 0),
-                "close_price": api_data.get("c", 0),
-                "change": api_data.get("d", 0),
-                "change_percent": api_data.get("dp", 0),
-                "volume": 0,
-            }
-        )
+            nepal_dt=today
+        ).first()
+
+        # If not in DB → call API
+        if not stock_data:
+            api_data = get_stock_data(search_symbol)
+            if api_data:
+                stock_data = New_Stock_Data.objects.create(
+                    symbol=api_data['symbol'],
+                    CompanyName=api_data['CompanyName'],
+                    Currency=api_data['Currency'],
+                    nepal_dt=api_data['nepal_dt'],
+                    utc_dt=api_data['utc_dt'],
+                    open_price=api_data['open_price'],
+                    high_price=api_data['high_price'],
+                    low_price=api_data['low_price'],
+                    close_price=api_data['close_price'],
+                    volume=api_data['volume'],
+                    change=api_data['change'],
+                )
+
+        # Save in cache (even if from DB)
+        if stock_data:
+            cache.set(cache_key, stock_data, timeout=60 * 60 * 6)  # 6 hours
 
     # ---------------- WATCHLIST ----------------
-    stock_dict = {}
+    watchlist_cache_key = f"watchlist_{request.user}"
 
-    if nepal_dt:
-        Watchlist.objects.update_or_create(
+    Watchdata = cache.get(watchlist_cache_key)
+
+    if not Watchdata:
+        Watchdata = list(
+            Watchlist.objects.filter(user=request.user)
+            .order_by("-added_at")[:5]
+        )
+
+        cache.set(watchlist_cache_key, Watchdata, timeout=60 * 10)  # 10 min
+
+    # ================= UPDATE WATCHLIST =================
+    if stock_data:
+        watchlist_entry, created = Watchlist.objects.update_or_create(
             user=request.user,
-            symbol=search_symbol,
+            symbol=stock_data.symbol,
+            nepal_dt=stock_data.nepal_dt,
             defaults={
-                "nepal_dt": nepal_dt.date(),
-                "close_price": api_data.get("c", 0),
-                "change": api_data.get("d", 0),
+                "CompanyName": stock_data.CompanyName,
+                "Currency": stock_data.Currency,
+                "close_price": stock_data.close_price,
+                "volume": stock_data.volume,
+                "change": stock_data.change,
             }
         )
 
-        watchlist = Watchlist.objects.filter(
-            user=request.user
-        ).order_by("-added_at")[:5]
+        if watchlist_entry in Watchdata:
+            Watchdata.remove(watchlist_entry)
 
-        for wl in watchlist:
-            latest = New_Stock_Data.objects.filter(
-                symbol=wl.symbol
-            ).order_by("-nepal_dt").first()
+        Watchdata.insert(0, watchlist_entry)
+        if len(Watchdata)>5:
+            Watchdata.pop()
 
-            if latest:
-                stock_dict[wl.symbol] = latest
 
-    # ---------------- WALLET & TRANSACTIONS ----------------
-    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        # IMPORTANT: refresh watchlist cache after modification
+        cache.set(watchlist_cache_key, Watchdata, timeout=60 * 10)
 
-    user_transactions = Transaction.objects.filter(
-        user=request.user
-    ).order_by("-created_at")
-
-    # ---------------- BUY / SELL ----------------
-    if request.method == "POST":
-        action = request.POST.get("action")
-        symbol = request.POST.get("symbol")
-        quantity = int(request.POST.get("quantity", 1))
-
-        latest_stock = New_Stock_Data.objects.filter(
-            symbol=symbol
-        ).order_by("-nepal_dt").first()
-
-        if latest_stock:
-            price = latest_stock.close_price
-
-            if action == "buy" and wallet.balance >= price * quantity:
-                Transaction.objects.create(
-                    user=request.user,
-                    symbol=symbol,
-                    price=price,
-                    quantity=quantity,
-                    transaction_type="BUY",
-                )
-                wallet.balance -= price * quantity
-                wallet.save()
-
-            elif action == "sell":
-                bought = Transaction.objects.filter(
-                    user=request.user,
-                    symbol=symbol,
-                    transaction_type="BUY",
-                ).aggregate(total=Sum("quantity"))["total"] or 0
-
-                sold = Transaction.objects.filter(
-                    user=request.user,
-                    symbol=symbol,
-                    transaction_type="SELL",
-                ).aggregate(total=Sum("quantity"))["total"] or 0
-
-                if bought - sold >= quantity:
-                    Transaction.objects.create(
-                        user=request.user,
-                        symbol=symbol,
-                        price=price,
-                        quantity=quantity,
-                        transaction_type="SELL",
-                    )
-                    wallet.balance += price * quantity
-                    wallet.save()
-
-        return redirect("dashboard")
-
-    # ---------------- LSTM GRAPH DATA ----------------
-    lstm_graph_data = {}
-
-    try:
-        lstm_graph_data = get_lstm_graph(
-            symbol=search_symbol,
-            future_days=future_days
-        )
-        print("LSTM graph generated")
-    except Exception as e:
-        print("LSTM Graph Error:", e)
-
-    # ---------------- CONTEXT ----------------
     context = {
-        "data": stock_dict,
-        "wallet": wallet,
-        "transactions": user_transactions,
-        "recent_symbols": New_Stock_Data.objects.values_list(
-            "symbol", flat=True
-        ).distinct()[:10],
-        "lstm_graph_data": json.dumps(lstm_graph_data or {}),
-        "current_period": period,
-        "current_symbol": search_symbol,
+        "stock_data": stock_data,
+        "Watchdata": Watchdata,
+        "symbol": search_symbol,
+        "period": period,
     }
-
     return render(request, "dashboard.html", context)
+
+    # # ---------------- WALLET & TRANSACTIONS ----------------
+    # wallet, _ = Wallet.objects.get_or_create(user=request.user)
+
+    # user_transactions = Transaction.objects.filter(
+    #     user=request.user
+    # ).order_by("-created_at")
+
+    # # ---------------- BUY / SELL ----------------
+    # if request.method == "POST":
+    #     action = request.POST.get("action")
+    #     symbol = request.POST.get("symbol")
+    #     quantity = int(request.POST.get("quantity", 1))
+
+    #     latest_stock = New_Stock_Data.objects.filter(
+    #         symbol=symbol
+    #     ).order_by("-nepal_dt").first()
+
+    #     if latest_stock:
+    #         price = latest_stock.close_price
+
+    #         if action == "buy" and wallet.balance >= price * quantity:
+    #             Transaction.objects.create(
+    #                 user=request.user,
+    #                 symbol=symbol,
+    #                 price=price,
+    #                 quantity=quantity,
+    #                 transaction_type="BUY",
+    #             )
+    #             wallet.balance -= price * quantity
+    #             wallet.save()
+
+    #         elif action == "sell":
+    #             bought = Transaction.objects.filter(
+    #                 user=request.user,
+    #                 symbol=symbol,
+    #                 transaction_type="BUY",
+    #             ).aggregate(total=Sum("quantity"))["total"] or 0
+
+    #             sold = Transaction.objects.filter(
+    #                 user=request.user,
+    #                 symbol=symbol,
+    #                 transaction_type="SELL",
+    #             ).aggregate(total=Sum("quantity"))["total"] or 0
+
+    #             if bought - sold >= quantity:
+    #                 Transaction.objects.create(
+    #                     user=request.user,
+    #                     symbol=symbol,
+    #                     price=price,
+    #                     quantity=quantity,
+    #                     transaction_type="SELL",
+    #                 )
+    #                 wallet.balance += price * quantity
+    #                 wallet.save()
+
+    #     return redirect("dashboard")
+
+    # # ---------------- LSTM GRAPH DATA ----------------
+    # lstm_graph_data = {}
+
+    # try:
+    #     lstm_graph_data = get_lstm_graph(
+    #         symbol=search_symbol,
+    #         future_days=future_days
+    #     )
+    #     print("LSTM graph generated")
+    # except Exception as e:
+    #     print("LSTM Graph Error:", e)
+
+    # # ---------------- CONTEXT ----------------
+    # context = {
+    #     "data": stock_dict,
+    #     "wallet": wallet,
+    #     "transactions": user_transactions,
+    #     "recent_symbols": New_Stock_Data.objects.values_list(
+    #         "symbol", flat=True
+    #     ).distinct()[:10],
+    #     "lstm_graph_data": json.dumps(lstm_graph_data or {}),
+    #     "current_period": period,
+    #     "current_symbol": search_symbol,
+    # }
+
+    
 
 
 

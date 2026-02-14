@@ -42,9 +42,9 @@
 
     <!-- Market Overview Cards -->
     <section class="grid">
-      {% for key, stock in data.items %}
+      {% for stock in Watchdata %}
       <div class="card">
-        <h3><a href="?symbol={{ key }}">{{ key }}</a></h3>
+        <h3><a href="?symbol={{ key }}">{{ stock.symbol }}</a></h3>
         <p style="font-size:1.25rem; font-weight:bold;">
           {% if stock %} Price: ${{ stock.close_price }} {% else %} NA {% endif %}
         </p>
@@ -111,7 +111,7 @@
               </tr>
             </thead>
             <tbody>
-              {% for key, stock in data.items %}
+              {% for key, stock in stock_data.items %}
               <tr>
                 <td>{{ key }}</td>
                 <td>{% if stock %}${{ stock.close_price }}{% else %}NA{% endif %}</td>
@@ -140,48 +140,5 @@
 
   </main>
 </div>
-
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-<script>
-  const graphData = JSON.parse('{{ lstm_graph_data|escapejs }}');
-
-  if (
-    graphData &&
-    graphData.historical &&
-    graphData.predicted
-  ) {
-    const historicalTrace = {
-      x: graphData.historical.dates,
-      y: graphData.historical.prices,
-      mode: "lines",
-      name: "Actual Price",
-      line: { width: 2 }
-    };
-
-    const predictedTrace = {
-      x: graphData.predicted.dates,
-      y: graphData.predicted.prices,
-      mode: "lines",
-      name: "LSTM Prediction",
-      line: { width: 2, dash: "dot" }
-    };
-
-    Plotly.newPlot(
-      "forecastChart",
-      [historicalTrace, predictedTrace],
-      {
-        title: "LSTM Price Prediction",
-        xaxis: { title: "Date", type: "date" },
-        yaxis: { title: "Price ($)" },
-        hovermode: "x unified"
-      },
-      { responsive: true }
-    );
-  } else {
-    document.getElementById("forecastChart").innerHTML =
-      "<p style='text-align:center;color:red;'>No prediction data available</p>";
-  }
-</script>
 
 {% endblock content %}
