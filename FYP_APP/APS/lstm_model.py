@@ -3,7 +3,6 @@ import datetime
 import pytz
 import os
 import numpy as np
-import pandas as pd
 import yfinance as yf
 
 from sklearn.preprocessing import StandardScaler
@@ -27,10 +26,10 @@ def load_stock_data(symbol):
     return data
 
 
-def predict_stock_price(symbol="TSLA"):
+def predict_stock_price(symbol="TSLA", period=7):
     """
     Trains LSTM model and predicts future stock price
-    Returns prediction and model accuracy
+    Returns prediction, model accuracy, and future 7-day prices
     """
 
     data = load_stock_data(symbol)
@@ -51,49 +50,56 @@ def predict_stock_price(symbol="TSLA"):
 
     X_train = np.array(X_train)
     y_train = np.array(y_train)
-    X_train = X_train.reshape(
-        X_train.shape[0], X_train.shape[1], 1
-    )
+    X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
 
     # LSTM Model
     model = keras.Sequential([
-        keras.layers.LSTM(64, return_sequences=True,
-                          input_shape=(X_train.shape[1], 1)),
+        keras.layers.LSTM(64, return_sequences=True, input_shape=(X_train.shape[1], 1)),
         keras.layers.LSTM(64),
         keras.layers.Dense(128, activation="relu"),
         keras.layers.Dropout(0.5),
         keras.layers.Dense(1)
     ])
 
-    model.compile(
-        optimizer="adam",
-        loss="mae"
-    )
-
+    model.compile(optimizer="adam", loss="mae")
     model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=0)
 
-    # Testing
-    test_data = scaled_data[train_len - 60:]
-    X_test = []
-
+    # Testing (R2 accuracy)
+    X_test, y_test = [], []
+    test_data = scaled_data[train_len-60:]
     for i in range(60, len(test_data)):
         X_test.append(test_data[i-60:i, 0])
 
-    X_test = np.array(X_test)
-    X_test = X_test.reshape(
-        X_test.shape[0], X_test.shape[1], 1
-    )
+    if len(X_test) > 0:
+        X_test = np.array(X_test).reshape(-1, 60, 1)
+        predictions = model.predict(X_test, verbose=0)
+        predictions = scaler.inverse_transform(predictions)
+        actual = close_prices[train_len:]
+        r2 = r2_score(actual, predictions)
+    else:
+        # small dataset edge-case
+        predictions = np.array([[close_prices[-1][0]]])
+        r2 = 0.0
 
-    predictions = model.predict(X_test, verbose=0)
-    predictions = scaler.inverse_transform(predictions)
+    # Future 7-day prediction
+    last_60_days = scaled_data[-60:]
+    current_input = last_60_days.reshape(1, 60, 1)
+    future_predictions = []
 
-    actual = close_prices[train_len:]
-    r2 = r2_score(actual, predictions)
+    for _ in range(period):
+        next_price = model.predict(current_input, verbose=0)
+        future_predictions.append(next_price[0,0])
+        # Slide window forward
+        current_input = np.append(current_input[:,1:,:], [[[next_price[0,0]]]], axis=1)
+
+    future_predictions = scaler.inverse_transform(np.array(future_predictions).reshape(-1,1)).flatten()
 
     return {
         "symbol": symbol,
-        "current_price": float(data["Close"].iloc[-1]),
+        "current_price": float(data["Close"].iloc[-1].item()),
         "predicted_price": float(predictions[-1][0]),
         "accuracy": round(r2 * 100, 2),
-        "close_prices": data["Close"]
+        "close_prices": data["Close"],
+        "future_days": future_predictions.tolist()  # NEW KEY for future prediction
     }
+

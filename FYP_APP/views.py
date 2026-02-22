@@ -101,11 +101,10 @@ from .StockAPI import get_stock_data
 from django.core.cache import cache
 
 @login_required(login_url='Sign_In')
-
 def dashboard_view(request):
 
     # ---------------- SYMBOL & PERIOD ----------------
-    search_symbol = request.GET.get('symbol', 'BTC').upper()
+    search_symbol = request.GET.get('symbol', 'AAPL').upper()
     period = request.GET.get('period', '1y')
 
     nepal_tz = pytz.timezone("Asia/Kathmandu")

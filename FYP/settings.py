@@ -134,13 +134,20 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-stock-cache',
+    }
+}
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-FINNHUB_API_KEY = "d5925c9r01qvj8ijk49gd5925c9r01qvj8ijk4a0"
-LOGODEV_API_KEY = 'pk_VIDkWNTDSVmH0hCdU2isVQ'
-LOGODEV_SECRET_KEY = 'sk_EV8b48wMQXamvVT1qJ4kfA'
+STOCKDATA_API_KEY = "UMLrzyuCqOiI51prUTGvbbrLSqI3LEdduOwTk9PG"
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
