@@ -1,0 +1,196 @@
+.navbar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 80px;
+    position:relative;
+}
+
+.logo {
+    font-size:22px;
+    font-weight:bold;
+    color:#1affc6;
+}
+
+.nav-links {
+    list-style:none;
+    display:flex;
+    gap:40px;
+}
+
+.nav-links a {
+    text-decoration:none;
+    color:#ccc;
+    transition:.3s;
+}
+
+.nav-links a:hover {
+    color:#1affc6;
+}
+
+.btn-outline {
+    padding:8px 18px;
+    border:1px solid #1affc6;
+    border-radius:25px;
+    display:inline-block;
+}
+
+/* Hamburger Menu */
+#menu-icon {
+    display:none;
+    font-size:28px;
+    cursor:pointer;
+    color:#1affc6;
+}
+
+/* ===== HERO SECTION ===== */
+.about-hero{
+    padding:80px 10%;
+    text-align:center;
+}
+
+.about-hero h1{
+    font-size:42px;
+    margin-bottom:20px;
+}
+
+.about-hero span{
+    color:#1affc6;
+}
+
+.about-hero p{
+    max-width:700px;
+    margin:0 auto;
+    color:#bbb;
+}
+
+/* ===== CONTENT SECTIONS ===== */
+.section{
+    padding:60px 10%;
+}
+
+.section h2{
+    margin-bottom:20px;
+    color:#1affc6;
+}
+
+.section p{
+    color:#ccc;
+    margin-bottom:20px;
+}
+
+/* ===== TECH LIST ===== */
+.tech-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:20px;
+    margin-top:20px;
+}
+
+.tech-item{
+    background:#0a1f1f;
+    padding:20px;
+    border-radius:15px;
+    border:1px solid rgba(26,255,198,0.2);
+}
+
+/* ===== CONTACT SECTION ===== */
+.contact{
+    background:#012626;
+    padding:60px 10%;
+    text-align:center;
+}
+
+.contact h2{
+    margin-bottom:20px;
+}
+
+.contact p{
+    color:#bbb;
+    margin-bottom:10px;
+}
+/*  MOBILE RESPONSIVE DESIGN  */
+
+@media (max-width: 992px) {
+
+    .navbar {
+        padding: 20px 30px;
+    }
+
+    .nav-links {
+        gap: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* Show Hamburger */
+    #menu-icon {
+        display: block;
+    }
+
+    /* Hide nav links initially */
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #021414;
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 25px 0;
+        display: none;
+        border-top: 1px solid rgba(26,255,198,0.2);
+    }
+
+    /* When active (JS will add this class) */
+    .nav-links.active {
+        display: flex;
+    }
+
+    /* Adjust hero text */
+    .about-hero h1 {
+        font-size: 30px;
+    }
+
+    .about-hero p {
+        font-size: 14px;
+    }
+
+    .section {
+        padding: 50px 6%;
+    }
+
+    .tech-list {
+        grid-template-columns: 1fr;
+    }
+
+    .contact {
+        padding: 50px 6%;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .navbar {
+        padding: 15px 20px;
+    }
+
+    .logo {
+        font-size: 18px;
+    }
+
+    .about-hero h1 {
+        font-size: 24px;
+    }
+
+    .section h2 {
+        font-size: 20px;
+    }
+
+    .section p {
+        font-size: 14px;
+    }
+
+}

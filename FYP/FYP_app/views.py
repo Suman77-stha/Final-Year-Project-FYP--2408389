@@ -3,9 +3,15 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from FYP_app.function import get_stock_data
+from FYP_APP.function import get_stock_data
 
+def Forget_Password(request):
+    if request.method == 'POST':
+        form= request.post
+        if form.is_valid():
+            return redirect()
 
+    return redirect('ForgetPassword.html')
 
 
 # ---------------- SIGN UP VIEW ----------------
@@ -82,9 +88,7 @@ def logout_view(request):
 
     # Redirect to login page after logout
     return redirect('Sign_In')
-def forgetPassword(request):
-    return(request,'ForgetPassword.html')
+
 
 def stock(request):
     return(get_stock_data())
-

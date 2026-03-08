@@ -1,14 +1,7 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-
-  /* background-image: url("https://cdn.allvoicelab.com/allvoice/prod/public/blog/2605766060703502124/20250612/c062333d-e0ba-42df-b375-0d82ac243b9f.png");
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-attachment: fixed; */
   background-color: whitesmoke;
-
   height: 100vh;
   display: flex;
   justify-content: center;

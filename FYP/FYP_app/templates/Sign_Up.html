@@ -1,16 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Signup Page</title>
-
-  <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-
-  <div class="container">
-
+{% extends "base.html" %}
+{% block title %} Sign Up {% endblock title%}
+{% block content %}
     <!-- LEFT SECTION -->
     <div class="left">
       <h1>Welcome!</h1>
@@ -27,14 +17,18 @@
     <!-- RIGHT SECTION -->
     <div class="right">
       <h2>Sign Up</h2>
+      {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}
+          <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+      {% endif %}
 
       <form action="{% url 'Sign_Up' %}" method="POST">
         {% csrf_token %}
 
         <!-- USERNAME -->
         <label for="{{ form.username.id_for_label }}"></label>
-        <input class="name" type="text" name="username" id="id_username"
-               placeholder="Full name" value="{{ form.username.value }}" required />
+        <input class="name" type="text" name="username" id="id_username"placeholder="Full name" value="{{ form.username.value }}" required />
 
         {% for error in form.username.errors %}
           <span class="text-danger">{{ error }}</span>
@@ -43,8 +37,7 @@
 
         <!-- EMAIL -->
         <label for="{{ form.email.id_for_label }}"></label>
-        <input class="email" type="email" name="{{ form.email.name }}"
-               value="{{ form.email.value }}" placeholder="Email" required />
+        <input class="email" type="email" name="{{ form.email.name }}"value="{{ form.email.value }}" placeholder="Email" required />
 
         {% for error in form.email.errors %}
           <span class="text-danger">{{ error }}</span>
@@ -82,6 +75,4 @@
         <a href="{% url 'Sign_In' %}">Sign In</a>
       </p>
     </div>
-  </div>
-</body>
-</html>
+    {% endblock content %}

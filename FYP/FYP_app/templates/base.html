@@ -1,0 +1,24 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}User Authentication{% endblock %}</title>
+    <link rel="stylesheet" href="/static/CSS/style.css">
+    <link rel="stylesheet" href="/static/CSS/style_dashboard.css">
+</head>
+<body>
+
+    <!-- Main Content -->
+    <div class="container">
+        {% block content %}
+        {% endblock content %}
+    </div>
+        
+    
+
+    <script src="/static/JS/Dashboard.js"></script>
+
+</body>
+</html>

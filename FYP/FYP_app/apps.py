@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class FypAppConfig(AppConfig):
-    name = 'FYP_app'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'FYP_APP'

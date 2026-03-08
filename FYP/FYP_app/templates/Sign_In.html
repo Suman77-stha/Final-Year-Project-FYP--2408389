@@ -1,16 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login Page</title>
-
-  <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-
-  <div class="container">
-
+{% extends "base.html" %}
+{% block title %} Sign In {% endblock title%}
+{% block content %}
     <!-- LEFT SECTION -->
     <div class="left">
       <h1>Welcome!</h1>
@@ -31,6 +21,7 @@
 
       <form action="{% url 'Sign_In' %}" method="POST">
         {% csrf_token %}
+        
 
         <!-- USERNAME FIELD -->
         <input class="name" type="text" name="username"
@@ -62,7 +53,7 @@
             <span>Remember me</span>
           </label>
 
-          <a href="#" class="forget">Forgot password?</a>
+          <a href="{%url 'Forget_Password'%}" class="forget">Forgot password?</a>
         </div>
 
         <button class="btn">Sign In</button>
@@ -73,7 +64,4 @@
         <a href="{% url 'Sign_Up' %}">Sign Up</a>
       </p>
     </div>
-  </div>
-
-</body>
-</html>
+{% endblock content %}

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TradeVision AI Dashboard</title>
+
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
+}
+
+body{
+background:linear-gradient(135deg,#021414,#062f2f,#031d1e);
+color:white;
+overflow-x:hidden;
+}
+
+/* HEADER */
+
+.header{
+height:70px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 30px;
+background:#0b0f0f;
+border-bottom:1px solid #1c2a2a;
+}
+
+.header-left{
+display:flex;
+align-items:center;
+gap:25px;
+}
+
+.logo{
+font-size:22px;
+font-weight:bold;
+color:#1affc6;
+}
+
+.search-box{
+display:flex;
+align-items:center;
+gap:10px;
+background:#151c1c;
+padding:8px 15px;
+border-radius:20px;
+width:350px;
+height:40px;
+border:1px solid #1f2f2f;
+}
+
+.search-box input{
+background:none;
+border:none;
+outline:none;
+color:white;
+width:100%;
+}
+
+.header-right{
+display:flex;
+gap:20px;
+}
+
+.header-right i{
+font-size:22px;
+cursor:pointer;
+}
+
+/* LAYOUT */
+
+.sub-container{
+display:flex;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:230px;
+background:#050909;
+height:100vh;
+padding:20px;
+border-right:1px solid #1f2f2f;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+}
+
+.menu{
+list-style:none;
+display:flex;
+flex-direction:column;
+gap:15px;
+}
+
+.menu li{
+display:flex;
+align-items:center;
+gap:10px;
+padding:12px;
+border-radius:10px;
+cursor:pointer;
+transition:.3s;
+color:#bdbdbd;
+}
+
+.menu li:hover{
+background:#0f2424;
+color:#1affc6;
+transform:translateX(4px);
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+padding:30px;
+}
+
+/* CRYPTO CARDS */
+
+.crypto-row{
+display:flex;
+gap:20px;
+flex-wrap:wrap;
+margin-bottom:25px;
+}
+
+.crypto-card{
+flex:1;
+min-width:200px;
+height:140px;
+background:linear-gradient(145deg,#121919,#1c2626);
+border-radius:15px;
+padding:15px;
+border:1px solid #1f2f2f;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+transition:.3s;
+}
+
+.crypto-card:hover{
+transform:translateY(-5px);
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+}
+
+/* DASHBOARD GRID */
+
+.dashboard-layout{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:25px;
+}
+
+/* PANELS */
+
+.chart{
+background:#171b2e;
+border-radius:18px;
+padding:25px;
+border:1px solid #20293a;
+}
+
+.chart-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:15px;
+}
+
+.chart-buttons{
+display:flex;
+gap:6px;
+}
+
+.chart-buttons button{
+background:#2a3553;
+border:none;
+color:white;
+padding:5px 10px;
+font-size:11px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.chart-buttons button.active{
+background:#00ffae;
+color:black;
+}
+
+/* DONUT */
+
+.overview-content{
+display:flex;
+gap:20px;
+align-items:center;
+}
+
+.donut-wrapper{
+position:relative;
+width:130px;
+height:130px;
+}
+
+.donut-center{
+position:absolute;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:1000px){
+
+.dashboard-layout{
+grid-template-columns:1fr;
+}
+
+.crypto-row{
+flex-direction:column;
+}
+
+.sidebar{
+position:fixed;
+left:-230px;
+transition:.3s;
+}
+
+.sidebar.active{
+left:0;
+}
+
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- HEADER -->
+
+<div class="header">
+
+<div class="header-left">
+<i class='bx bx-menu' id="menu-toggle"></i>
+<div class="logo">TradeVision AI</div>
+<div>Hi Suman</div>
+</div>
+
+<div class="search-box">
+<i class="bx bx-search"></i>
+<input type="text" placeholder="Search symbol...">
+</div>
+
+<div class="header-right">
+<i class="bx bx-bell"></i>
+<i class="bx bxs-user"></i>
+</div>
+
+</div>
+
+<div class="sub-container">
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+<ul class="menu">
+<li><i class='bx bx-bar-chart'></i> Overview</li>
+<li><i class='bx bx-wallet'></i> Wallet</li>
+<li><i class='bx bx-trending-up'></i> Trading</li>
+<li><i class='bx bxs-robot'></i> AI Assistant</li>
+<li><i class='bx bx-briefcase'></i> Portfolio</li>
+<li><i class='bx bx-refresh'></i> Swap</li>
+</ul>
+
+<ul class="menu">
+<li><i class='bx bx-cog'></i> Settings</li>
+</ul>
+
+</div>
+
+<!-- MAIN -->
+
+<div class="main">
+
+<h2 style="margin-bottom:20px;">Overview</h2>
+
+<!-- CRYPTO CARDS -->
+
+<div class="crypto-row">
+
+<div class="crypto-card">
+<h4>Bitcoin</h4>
+<div>$72,612 <span style="color:#22c55e">+0.68%</span></div>
+</div>
+
+<div class="crypto-card">
+<h4>Ethereum</h4>
+<div>$2,145 <span style="color:#22c55e">+1.68%</span></div>
+</div>
+
+<div class="crypto-card">
+<h4>BNB</h4>
+<div>$662 <span style="color:#22c55e">+1.12%</span></div>
+</div>
+
+<div class="crypto-card">
+<h4>Apple</h4>
+<div>$262 <span style="color:#22c55e">+0.48%</span></div>
+</div>
+
+</div>
+
+<!-- DASHBOARD -->
+
+<div class="dashboard-layout">
+
+<div class="chart">
+
+<div class="chart-header">
+<h3>BTC Chart</h3>
+
+<div class="chart-buttons">
+<button class="active">7D</button>
+<button>1M</button>
+<button>5M</button>
+<button>1Y</button>
+</div>
+
+</div>
+
+<canvas id="lineChart"></canvas>
+
+</div>
+
+<div>
+
+<div class="chart" style="margin-bottom:20px;">
+
+<h3>BTC Distribution</h3>
+
+<div class="overview-content">
+
+<div class="donut-wrapper">
+
+<canvas id="donutChart"></canvas>
+
+<div class="donut-center">
+<strong>$72,612</strong>
+<span style="font-size:12px;color:#aaa;">Total</span>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="chart">
+
+<h3>Profit & Loss</h3>
+
+<canvas id="barChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* SIDEBAR TOGGLE */
+
+const toggle=document.getElementById("menu-toggle");
+const sidebar=document.querySelector(".sidebar");
+
+toggle.onclick=()=>{
+sidebar.classList.toggle("active");
+}
+
+/* LINE CHART */
+
+new Chart(document.getElementById('lineChart'),{
+type:'line',
+data:{
+labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+datasets:[{
+data:[30000,32000,31000,35000,40000,45000,50000],
+borderColor:'#00ffae',
+backgroundColor:'rgba(0,255,174,0.2)',
+fill:true,
+tension:0.4
+}]
+},
+options:{
+plugins:{legend:{display:false}}
+}
+});
+
+/* BAR CHART */
+
+new Chart(document.getElementById('barChart'),{
+type:'bar',
+data:{
+labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+datasets:[{
+data:[500,1000,800,1200,700,1500,900],
+backgroundColor:'#00c896'
+}]
+},
+options:{plugins:{legend:{display:false}}}
+});
+
+/* DONUT */
+
+new Chart(document.getElementById('donutChart'),{
+type:'doughnut',
+data:{
+labels:['BTC','ETH','USDT'],
+datasets:[{
+data:[50,40,10],
+backgroundColor:['#f7931a','#627eea','#00ffae']
+}]
+},
+options:{plugins:{legend:{display:false}}}
+});
+
+</script>
+
+</body>
+</html>
