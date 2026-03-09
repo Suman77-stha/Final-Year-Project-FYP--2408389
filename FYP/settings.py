@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -146,7 +145,7 @@ CACHES = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-STOCKDATA_API_KEY = "UMLrzyuCqOiI51prUTGvbbrLSqI3LEdduOwTk9PG"
+STOCKDATA_API_KEY = "RH1cObRmVBGqK0a9SmEBdJfs6LT5TsAEvxKbswCB"
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
