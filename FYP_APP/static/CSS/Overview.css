@@ -1,0 +1,376 @@
+.header{
+    height:70px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 30px;
+    background:#0b0f0f;
+    border-bottom:1px solid #1c2a2a;
+}
+
+.header-left{
+    display:flex;
+    align-items:center;
+    gap:30px;
+}
+
+.logo{
+    font-size:22px;
+    font-weight:bold;
+    color:#1affc6;
+}
+
+.search-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#151c1c;
+    padding:8px 15px;
+    border-radius:8px;
+    width:350px;
+    height:40px;
+    border:1px solid #1f2f2f;
+}
+
+.search-box input{
+    background: transparent !important;
+    border:none;
+    outline:none;
+    color:white;
+    width:100%;
+}
+
+/* remove browser autofill white background */
+.search-box input:-webkit-autofill{
+    -webkit-box-shadow: 0 0 0 1000px #151c1c inset !important;
+    -webkit-text-fill-color: white !important;
+}
+
+.header-right{
+    display:flex;
+    align-items:center;
+    gap:20px;
+}
+
+.header-right i{
+    font-size:20px;
+    color:#1affc6;
+    cursor:pointer;
+    height:40px;
+    width:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.sub-container{
+    display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+    width:250px;
+    background:#0d1414;
+    height:90vh;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    border-right:1px solid #1f2f2f;
+}
+
+.menu{
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.menu li{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.menu li:hover{
+    background:#162020;
+}
+
+/* MAIN */
+.main{
+    flex:1;
+    padding:25px;
+}
+.main h3{
+    font-size:18px;    
+    margin-bottom:10px;
+}   
+
+/* CRYPTO CARDS */
+.crypto-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.crypto-card{
+    background:#111818;
+    padding: 12px 18px 0; 
+    border-radius:12px;
+    border:1px solid #1f2f2f;
+    flex:1;
+    min-height: 180px;
+    position: relative;
+}
+.crypto-card h5{
+    font-size:16px;
+    font-weight:600;
+    margin-top:0;
+    color:#1affc6
+}
+.crypto-card p{
+    font-size:14px;
+    color:#888;
+    margin-top:5px;
+    font-weight:500;
+}
+.crypto-card div{
+    font-size:16px;
+    font-weight:600;
+    margin-top:0;
+    justify-content: space-between;
+    display: flex;
+}
+.crypto-card div span{
+    width: 50px;
+    height: 25px;
+    border-radius: 15px;
+    background-color: #1affc6;
+    padding-left: 2px ;
+    padding-right: 2px ;
+    text-align: center;
+    
+}
+.s_graph{
+    width:100%;
+    height:80px;
+    background:#5e17bb;
+    border-radius:5px;
+    margin-top:10px;
+    position: absolute;
+    bottom :0;
+    right:0;
+}
+
+
+/* DASHBOARD LAYOUT */
+.dashboard-layout{
+    display:flex;
+    gap:10px;
+}
+
+.left-section{
+    width:60%;
+    max-height: 250px;
+}
+
+.right-section{
+    width:40%;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+/* CHART CARD */
+.chart{
+    height:100%;
+    background:#111818;
+    border-radius:15px;
+    padding:20px;
+    border:1px solid #1f2f2f;
+    width: 100%;
+}
+
+canvas{
+    margin-top:15px;
+}
+
+/* Bitcoin header row */
+.chart-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+/* Smaller title */
+.chart-header h3{
+    font-size:16px;
+    font-weight:500;
+}
+
+/* Time buttons right side */
+.chart-buttons{
+    display:flex;
+    gap:8px;
+}
+
+.chart-buttons button{
+    background:#151c1c;
+    color:white;
+    border:1px solid #1f2f2f;
+    padding:4px 10px;
+    font-size:12px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+.chart-buttons button.active{
+    background:#00c896;
+}
+
+/* Overview layout */
+.overview-content{
+    display:flex;
+    gap:20px;
+    align-items:center;
+}
+
+.donut-wrapper{
+    position:relative;
+    width:120px;
+    height:120px;
+}
+
+.donut-center{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+.overview-list{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.overview-item{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+}
+/* ============================= */
+/* 📱 MOBILE RESPONSIVE DESIGN */
+/* ============================= */
+
+@media (max-width: 992px){
+
+    /* Header */
+    .header{
+        padding:0 15px;
+    }
+
+    .search-box{
+        width:200px;
+    }
+
+    /* Sidebar hide by default */
+    .sidebar{
+        position:fixed;
+        left:-260px;
+        top:70px;
+        height:calc(100vh - 70px);
+        transition:0.3s ease;
+        z-index:1000;
+    }
+
+    .sidebar.active{
+        left:0;
+    }
+
+    /* Make main full width */
+    .main{
+        padding:15px;
+    }
+
+    .sub-container{
+        flex-direction:column;
+    }
+
+    /* Crypto cards stack */
+    .crypto-row{
+        flex-direction:column;
+    }
+
+    /* Dashboard layout stack */
+    .dashboard-layout{
+        flex-direction:column;
+    }
+
+    .left-section,
+    .right-section{
+        width:100%;
+    }
+}
+
+
+/* ============================= */
+/* 📱 SMALL MOBILE (phones) */
+/* ============================= */
+
+@media (max-width: 600px){
+
+    /* Header layout */
+    .header{
+        flex-direction:column;
+        height:auto;
+        gap:10px;
+        padding:10px;
+    }
+
+    .header-left{
+        width:100%;
+        justify-content:space-between;
+    }
+
+    .search-box{
+        width:100%;
+    }
+
+    /* Center right icons */
+    .header-right{
+        width:100%;
+        justify-content:center;
+    }
+
+    .header-right i{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#151c1c;
+        border-radius:50%;
+    }
+
+    /* Chart buttons wrap */
+    .chart-buttons{
+        flex-wrap:wrap;
+    }
+
+    /* Overview stack */
+    .overview-content{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .donut-wrapper{
+        margin:auto;
+    }
+
+}
