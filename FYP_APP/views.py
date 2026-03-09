@@ -1,4 +1,5 @@
 from datetime import date
+from pyexpat.errors import messages
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import AuthenticationForm
@@ -75,7 +76,6 @@ def SignUp_View(request):
 
     return render(request, 'Sign_Up.html', {'form': form})
 
-
 # ---------------- SIGN IN VIEW ----------------
 def Sign_In_view(request):
     if request.method == 'POST':
@@ -88,6 +88,17 @@ def Sign_In_view(request):
 
     return render(request, 'Sign_In.html', {'form': form})
 
+
+def landing_page_view(request):
+    return render(request, 'Landing_page.html')
+
+def about_view(request):
+    return render(request, 'About.html')
+
+def wallet_view(request):
+    return render(request, 'Wallet.html')
+def AI_Assistance_view(request):
+    return render(request, 'AI_Assistance.html')
 # views.py
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -97,7 +108,7 @@ import datetime
 import pytz
 
 from .models import CustomUserCreationForm, New_Stock_Data, Watchlist, Transaction, Wallet
-from .StockAPI import get_stock_data
+from .APS.StockAPI import get_stock_data
 from django.core.cache import cache
 
 @login_required(login_url='Sign_In')
@@ -160,16 +171,17 @@ def dashboard_view(request):
     # ================= UPDATE WATCHLIST =================
     if stock_data:
         watchlist_entry, created = Watchlist.objects.update_or_create(
-            user=request.user,
-            symbol=stock_data.symbol,
-            nepal_dt=stock_data.nepal_dt,
-            defaults={
-                "CompanyName": stock_data.CompanyName,
-                "Currency": stock_data.Currency,
-                "close_price": stock_data.close_price,
-                "volume": stock_data.volume,
-                "change": stock_data.change,
-            }
+    user=request.user,
+    symbol=stock_data.symbol,   # ONLY fields in unique constraint
+    defaults={
+        "nepal_dt": stock_data.nepal_dt,
+        "CompanyName": stock_data.CompanyName,
+        "Currency": stock_data.Currency,
+        "close_price": stock_data.close_price,
+        "volume": stock_data.volume,
+        "change": stock_data.change,
+    }
+
         )
 
         if watchlist_entry in Watchdata:
@@ -183,97 +195,90 @@ def dashboard_view(request):
         # IMPORTANT: refresh watchlist cache after modification
         cache.set(watchlist_cache_key, Watchdata, timeout=60 * 10)
 
+    # wallet, created = Wallet.objects.get_or_create(user=request.user)
+    # stock_price = None
+    # if stock_data:
+    #     stock_price = Decimal(stock_data.close_price)
+    
+    # # ================= BUY / SELL SYSTEM =================
+    # if request.method == "POST" and stock_price:
+    
+    #     action = request.POST.get("action")
+    #     quantity = int(request.POST.get("quantity", 1))
+    
+    #     if quantity <= 0:
+    #         messages.error(request, "Invalid quantity")
+    #         return redirect(request.path)
+    
+    #     total_cost = stock_price * Decimal(quantity)
+    
+    #     with db_transaction.atomic():
+    
+    #         portfolio, _ = Portfolio.objects.get_or_create(
+    #             user=request.user,
+    #             symbol=search_symbol
+    #         )
+    
+    #         # ---------------- BUY ----------------
+    #         if action == "buy":
+    
+    #             if wallet.balance >= total_cost:
+    
+    #                 wallet.balance -= total_cost
+    #                 wallet.save()
+    
+    #                 portfolio.quantity += quantity
+    #                 portfolio.save()
+    
+    #                 Transaction.objects.create(
+    #                     user=request.user,
+    #                     symbol=search_symbol,
+    #                     action="buy",
+    #                     price=stock_price,
+    #                     quantity=quantity,
+    #                     total=total_cost
+    #                 )
+    
+    #                 messages.success(request, f"Bought {quantity} shares of {search_symbol}")
+    
+    #             else:
+    #                 messages.error(request, "Insufficient balance!")
+    
+    #         # ---------------- SELL ----------------
+    #         elif action == "sell":
+    
+    #             if portfolio.quantity >= quantity:
+    
+    #                 wallet.balance += total_cost
+    #                 wallet.save()
+    
+    #                 portfolio.quantity -= quantity
+    #                 portfolio.save()
+    
+    #                 Transaction.objects.create(
+    #                     user=request.user,
+    #                     symbol=search_symbol,
+    #                     action="sell",
+    #                     price=stock_price,
+    #                     quantity=quantity,
+    #                     total=total_cost
+    #                 )
+    
+    #                 messages.success(request, f"Sold {quantity} shares of {search_symbol}")
+    
+    #             else:
+    #                 messages.error(request, "You don't own enough shares!")
+
     context = {
         "stock_data": stock_data,
         "Watchdata": Watchdata,
         "symbol": search_symbol,
         "period": period,
+        # "wallet": wallet,
+        # "transactions": transactions,
     }
     return render(request, "dashboard.html", context)
 
-    # # ---------------- WALLET & TRANSACTIONS ----------------
-    # wallet, _ = Wallet.objects.get_or_create(user=request.user)
-
-    # user_transactions = Transaction.objects.filter(
-    #     user=request.user
-    # ).order_by("-created_at")
-
-    # # ---------------- BUY / SELL ----------------
-    # if request.method == "POST":
-    #     action = request.POST.get("action")
-    #     symbol = request.POST.get("symbol")
-    #     quantity = int(request.POST.get("quantity", 1))
-
-    #     latest_stock = New_Stock_Data.objects.filter(
-    #         symbol=symbol
-    #     ).order_by("-nepal_dt").first()
-
-    #     if latest_stock:
-    #         price = latest_stock.close_price
-
-    #         if action == "buy" and wallet.balance >= price * quantity:
-    #             Transaction.objects.create(
-    #                 user=request.user,
-    #                 symbol=symbol,
-    #                 price=price,
-    #                 quantity=quantity,
-    #                 transaction_type="BUY",
-    #             )
-    #             wallet.balance -= price * quantity
-    #             wallet.save()
-
-    #         elif action == "sell":
-    #             bought = Transaction.objects.filter(
-    #                 user=request.user,
-    #                 symbol=symbol,
-    #                 transaction_type="BUY",
-    #             ).aggregate(total=Sum("quantity"))["total"] or 0
-
-    #             sold = Transaction.objects.filter(
-    #                 user=request.user,
-    #                 symbol=symbol,
-    #                 transaction_type="SELL",
-    #             ).aggregate(total=Sum("quantity"))["total"] or 0
-
-    #             if bought - sold >= quantity:
-    #                 Transaction.objects.create(
-    #                     user=request.user,
-    #                     symbol=symbol,
-    #                     price=price,
-    #                     quantity=quantity,
-    #                     transaction_type="SELL",
-    #                 )
-    #                 wallet.balance += price * quantity
-    #                 wallet.save()
-
-    #     return redirect("dashboard")
-
-    # # ---------------- LSTM GRAPH DATA ----------------
-    # lstm_graph_data = {}
-
-    # try:
-    #     lstm_graph_data = get_lstm_graph(
-    #         symbol=search_symbol,
-    #         future_days=future_days
-    #     )
-    #     print("LSTM graph generated")
-    # except Exception as e:
-    #     print("LSTM Graph Error:", e)
-
-    # # ---------------- CONTEXT ----------------
-    # context = {
-    #     "data": stock_dict,
-    #     "wallet": wallet,
-    #     "transactions": user_transactions,
-    #     "recent_symbols": New_Stock_Data.objects.values_list(
-    #         "symbol", flat=True
-    #     ).distinct()[:10],
-    #     "lstm_graph_data": json.dumps(lstm_graph_data or {}),
-    #     "current_period": period,
-    #     "current_symbol": search_symbol,
-    # }
-
-    
 
 
 

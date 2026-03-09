@@ -7,6 +7,10 @@ urlpatterns = [
     path('Sign_In/', views.Sign_In_view, name='Sign_In'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('', views.landing_page_view, name='Home'),
+    path('About/', views.about_view, name='About'),
+    path('Wallet/', views.wallet_view, name='Wallet'),
+    path('AI_Assistance/', views.AI_Assistance_view, name='AI_Assistance'),
 
     path('forgot_password/', views.forgot_password, name='forgot_password'),
     path('password_reset_done/',

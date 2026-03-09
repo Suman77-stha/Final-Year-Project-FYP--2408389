@@ -14,7 +14,7 @@ class CustomUserCreationForm(UserCreationForm):
 
 class New_Stock_Data(models.Model):
     symbol = models.CharField(max_length=10)
-    CompanyName = models.CharField(max_length=255)
+    CompanyName = models.CharField(max_length=255,null=True, blank=True)
     Currency = models.CharField(max_length=10)
     nepal_dt = models.DateField()
     utc_dt = models.DateField()
