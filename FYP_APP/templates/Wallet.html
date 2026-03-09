@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Smooth Voice Mesh</title>
+
+<style>
+body {
+    margin: 0;
+    background: #050816;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<div class="glow"></div>
+<canvas id="meshCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('meshCanvas');
+const ctx = canvas.getContext('2d');
+
+/* ---------- Retina Smooth Canvas ---------- */
+const size = 400;
+const dpr = window.devicePixelRatio || 1;
+canvas.width = size * dpr;
+canvas.height = size * dpr;
+canvas.style.width = size + "px";
+canvas.style.height = size + "px";
+ctx.scale(dpr, dpr);
+/* ------------------------------------------ */
+
+let particles = [];
+const particleCount = 280;
+let baseRadius = 180;      // Bigger circle
+let maxRadius = baseRadius;
+let time = 0;
+
+let destroyProgress = 0;   // Smooth destroy transition
+let destroyDirection = 1;
+
+let mouse = { x: -1000, y: -1000 };
+let audioLevel = 0;
+
+/* ---------- Voice Detection ---------- */
+async function initMic() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        function updateAudio() {
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i];
+            }
+            audioLevel = (sum / dataArray.length) / 255;
+            requestAnimationFrame(updateAudio);
+        }
+        updateAudio();
+    } catch (err) {
+        console.log("Mic denied.");
+    }
+}
+initMic();
+/* ------------------------------------- */
+
+class Particle {
+    constructor(id) {
+        this.id = id;
+        this.init();
+    }
+
+    init() {
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * maxRadius;
+        this.x = size/2 + Math.cos(angle) * r;
+        this.y = size/2 + Math.sin(angle) * r;
+        this.vx = 0;
+        this.vy = 0;
+        this.size = Math.random() * 2 + 1;
+        this.speed = 0.015 + Math.random() * 0.03;
+    }
+
+    update() {
+        const centerX = size/2;
+        const centerY = size/2;
+
+        /* Smooth breathing animation */
+        let breathing = Math.sin(time * 0.6) * 25;
+
+        /* Voice vibration */
+        let vibration = audioLevel * 60;
+
+        /* Smooth destroy morph */
+        let chaos = destroyProgress * 120;
+
+        let angle = (this.id / particleCount) * Math.PI * 2 + (time * 0.3);
+
+        let r = (maxRadius * 0.7)
+              + Math.sin(time + this.id) * 20
+              + breathing
+              + vibration
+              + (Math.random() - 0.5) * chaos;
+
+        let tx = centerX + Math.cos(angle) * r;
+        let ty = centerY + Math.sin(angle) * r;
+
+        this.vx += (tx - this.x) * this.speed;
+        this.vy += (ty - this.y) * this.speed;
+
+        /* Mouse air push */
+        let dx = this.x - mouse.x;
+        let dy = this.y - mouse.y;
+        let d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 120) {
+            this.vx += (dx / d) * 2;
+            this.vy += (dy / d) * 2;
+        }
+
+        this.vx *= 0.93;
+        this.vy *= 0.93;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        /* Circular boundary */
+        let dist = Math.hypot(this.x - centerX, this.y - centerY);
+        if (dist > maxRadius) {
+            let angle = Math.atan2(this.y - centerY, this.x - centerX);
+            this.x = centerX + Math.cos(angle) * maxRadius;
+            this.y = centerY + Math.sin(angle) * maxRadius;
+            this.vx *= -0.5;
+            this.vy *= -0.5;
+        }
+    }
+
+    draw() {
+        ctx.fillStyle = '#93c5fd';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function init() {
+    for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle(i));
+    }
+}
+
+function animate() {
+    ctx.fillStyle = 'rgba(5,8,22,0.18)';
+    ctx.fillRect(0, 0, size, size);
+
+    time += 0.02;
+
+    /* Smooth destroy / rearrange cycle */
+    if (Math.floor(time) % 12 < 6) {
+        destroyDirection = 1;
+    } else {
+        destroyDirection = -1;
+    }
+    destroyProgress += destroyDirection * 0.01;
+    destroyProgress = Math.max(0, Math.min(1, destroyProgress));
+
+    for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+
+        for (let j = i + 1; j < particles.length; j++) {
+            let dx = particles[i].x - particles[j].x;
+            let dy = particles[i].y - particles[j].y;
+            let distSq = dx*dx + dy*dy;
+
+            let minDist = 80 - destroyProgress * 40;
+
+            if (distSq < minDist * minDist) {
+                let opacity = (1 - Math.sqrt(distSq)/minDist) * 0.5;
+                ctx.strokeStyle = `rgba(147,197,253,${opacity})`;
+                ctx.lineWidth = 0.7;
+                ctx.beginPath();
+                ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y);
+                ctx.stroke();
+            }
+        }
+    }
+
+    requestAnimationFrame(animate);
+}
+
+window.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+});
+
+init();
+animate();
+</script>
+
+</body>
+</html>

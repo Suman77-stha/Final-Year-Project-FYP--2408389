@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %} Home {% endblock title %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/CSS/Landing_page.css">
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+    <div class="logo">TradeVision AI</div>
+    <div id="menu-icon">&#9776;</div>
+    <ul class="nav-links">
+        <li><a href="{% url 'Home' %}">Home</a></li>
+        <li><a href="{% url 'About' %}">About</a></li>
+        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li><a href="{% url 'Sign_In' %}">Sign In</a></li>
+    </ul>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+    <div class="hero-shape"></div>
+    <h1>Funding Your Growth <br> Powering the Future</h1>
+    <p>
+        Trade Vision AI combines deep learning, real-time market data, 
+        and automated trading systems to deliver accurate stock predictions 
+        and intelligent investment decisions.
+    </p>
+    <a href="{% url 'Sign_In' %}" class="btn-primary">Start Trading</a>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section class="features" id="features">
+    <h2>Powerful AI-Driven Trading Intelligence</h2>
+    <p class="section-desc">
+        Our system integrates machine learning, automation, and real-time 
+        analytics to transform stock market decision-making.
+    </p>
+
+    <div class="feature-grid">
+
+        <div class="feature-card">
+            <h3>AI Price Prediction</h3>
+            <p>Advanced LSTM models forecast stock trends using historical data analysis.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Real-Time Market Data</h3>
+            <p>Live API integration ensures up-to-date market prices and insights.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Buy/Sell Signals</h3>
+            <p>AI-based recommendation engine generates intelligent trading decisions.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Voice Assistant</h3>
+            <p>NLP-powered voice commands for seamless and hands-free trading interaction.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Auto Trading Bot</h3>
+            <p>Automated execution of trades with built-in risk management strategies.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Risk Dashboard</h3>
+            <p>Interactive visual analytics for tracking performance and minimizing risk.</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- ================= MARKET TICKER ================= -->
+<div class="ticker">
+    <span>
+        NASDAQ ▲ 15,230 | S&P 500 ▲ 4,810 | AAPL ▲ 2.4% | TSLA ▼ 1.2% | BTC ▲ 3.5% |
+    </span>
+</div>
+
+<!-- ================= DASHBOARD PREVIEW ================= -->
+<section class="dashboard-section">
+    <h2>Seamless Integration for Unmatched Efficiency</h2>
+
+    <div class="preview-box">
+        <div class="preview-grid">
+            <div class="card">
+                <h3>Live Market</h3>
+                <p>NASDAQ: 15,230 ▲</p>
+                <p>S&P 500: 4,810 ▲</p>
+                <p>BTC: $63,200 ▲</p>
+            </div>
+            <div class="card">
+                <h3>AI Prediction</h3>
+                <p>Stock: AAPL</p>
+                <p>Trend: <span class="bullish">Bullish</span></p>
+                <p>Confidence: 82%</p>
+            </div>
+            <div class="card">
+                <h3>Recommendation</h3>
+                <p>Signal: <span class="buy">BUY</span></p>
+                <p>Risk Level: Medium</p>
+                <p>RSI indicates oversold</p>
+            </div>
+            <div class="card">
+                <h3>Portfolio</h3>
+                <p>Total Value: $24,500</p>
+                <p>Profit: +8.2%</p>
+                <p>Active Trades: 6</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<script>
+/* Scroll Animation */
+window.addEventListener("scroll", function(){
+    const cards = document.querySelectorAll(".feature-card");
+    cards.forEach(card=>{
+        const position = card.getBoundingClientRect().top;
+        const screenPosition = window.innerHeight / 1.2;
+        if(position < screenPosition){
+            card.style.opacity = "1";
+            card.style.transform = "translateY(0)";
+        }
+    });
+});
+
+/* Mobile Menu Toggle */
+const menuIcon = document.getElementById('menu-icon');
+const navLinks = document.querySelector('.nav-links');
+
+menuIcon.addEventListener('click', ()=>{
+    navLinks.classList.toggle('active');
+});
+</script>
+
+{% endblock content %}

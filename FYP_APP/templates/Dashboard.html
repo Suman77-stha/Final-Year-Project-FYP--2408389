@@ -1,52 +1,231 @@
 {% extends "base.html" %}
 {% block title %} Dashboard {% endblock title %}
-
 {% block content %}
-<div class="dashboard-container">
+<link rel="stylesheet" href="/static/CSS/Overview.css">
 
-  <!-- Sidebar -->
-  <aside id="sidebar">
-    <h1 id="logoText">TradeAI</h1>
-    <nav>
-      <a href="#">📊 <span class="menu-text">Dashboard</span></a>
-      <a href="#">🤖 <span class="menu-text">AI Predictions</span></a>
-      <a href="#">💼 <span class="menu-text">Portfolio</span></a>
-      <a href="#">📈 <span class="menu-text">Prediction</span></a>
-      <a href="#">📰 <span class="menu-text">News</span></a>
-    </nav>
-  </aside>
+<div class="header">
+    <div class="header-left">
+       <i class='bx bx-menu' id="menu-toggle"></i>
+        <div class="logo">TradeVision AI</div>
+        <div>Hi Suman</div>
+    </div>
+     <!-- SEARCH FORM -->
+     <form class="search" method="GET">
+            <div class="search-box">
+                <i class="bx bx-search"></i>
+                <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
+            </div>
 
-  <!-- Main Content -->
-  <main>
+            <datalist id="recentList">
+                {% for s in recent_symbols %}
+                    <option value="{{ s }}">
+                {% endfor %}
+            </datalist>
+        </form>
+    
 
-    <!-- Header -->
-    <header>
-      <h2>Dashboard</h2>
+    <div class="header-right">
+        <i class="bx bx-bell"></i>
+        <i class="bx bxs-user"></i>
+    </div>
+</div>
 
-      <!-- Search bar -->
-      <form class="search" method="GET" style="margin-bottom:1rem;">
-        <input class="search_bar" type="text" name="symbol" placeholder="Search symbol..." list="recentList">
-        <datalist id="recentList">
-          {% for s in recent_symbols %}
-            <option value="{{ s }}">
-          {% endfor %}
-        </datalist>
-        <button type="submit">Search</button>
-      </form>
+<div class="sub-container">
 
-      <div class="notification_profile">
-        <button>🔔</button>
-        <div class="profile">👤</div>
+<div class="sidebar">
+    <ul class="menu">
+        <li><i class='bx bx-bar-chart'></i> Overview</li>
+        <li><i class='bx bx-wallet'></i> Wallet</li>
+        <li><i class='bx bx-trending-up'></i> Trading</li>
+        <li><i class='bx bxs-robot'></i> AI Assistant</li>
+        <li><i class='bx bx-briefcase'></i> Portfolio</li>
+        <li><i class='bx bx-refresh'></i> Swap</li>
+    </ul>
+
+    <ul class="menu">
+        <li><i class='bx bx-cog'></i> Settings</li>
+    </ul>
+</div>
+
+<div class="main">
+  <h3>Overview</h3>
+        
+
+<div class="crypto-row">
+  {% for stock in Watchdata %}
+    <div class="crypto-card">
+      <h5>
+        {% if stock %}
+          {{ stock.CompanyName }}
+        {% else %}
+          NA
+        {% endif %}
+        (
+        {% if stock %}
+          {{ stock.symbol }}
+        {% else %}
+          NA
+        {% endif %}
+        )
+      </h5>
+      <p>Close Price</p>
+      <div>
+        <div class="price_sec">
+          {% if stock %}
+            ${{ stock.close_price }}
+          {% else %}
+            NA
+          {% endif %}
+        </div>
+
+        {% if stock %}
+          {% if stock.change > 0 %}
+            <span style="
+              color: #08a241;
+              width: 50px;
+              height: 25px;
+              border-radius: 15px;
+              background-color: #3bffce;
+              padding-left: 2px;
+              padding-right: 2px;
+              text-align: center;
+              display: inline-block;">
+              {{ stock.change }}
+            </span>
+          {% elif stock.change < 0 %}
+            <span style="
+              color: #bb0000;
+              width: 50px;
+              height: 25px;
+              border-radius: 15px;
+              background-color: #fa6576;
+              padding-left: 2px;
+              padding-right: 2px;
+              text-align: center;
+              display: inline-block;">
+              {{ stock.change }}
+            </span>
+          {% else %}
+            <span>{{ stock.change }}</span>
+          {% endif %}
+        {% else %}
+          NA
+        {% endif %}
       </div>
-    </header>
 
-    <!-- Market Overview Cards -->
+      <div class="s_graph"></div>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="dashboard-layout">
+
+<div class="left-section">
+    <div class="chart">
+
+        <div class="chart-header">
+            <h3>Bitcoin Chart</h3>
+            <div class="chart-buttons">
+                <button class="active">1D</button>
+                <button>7D</button>
+                <button>1W</button>
+                <button>7W</button>
+                <button>1M</button>
+                <button>5M</button>
+            </div>
+        </div>
+
+        <canvas id="lineChart"></canvas>
+    </div>
+</div>
+
+<div class="right-section">
+
+    <div class="chart">
+        <h3>BTC</h3>
+
+        <div class="overview-content">
+            <div class="donut-wrapper">
+                <canvas id="donutChart"></canvas>
+                <div class="donut-center">
+                    <span style="font-size:16px;font-weight:bold;">$1,498.78</span>
+                    <span style="font-size:10px;color:#aaa;">Total Balance</span>
+                </div>
+            </div>
+
+            <div class="overview-list">
+                <div class="overview-item"><span>BTC</span><span>$763.51</span></div>
+                <div class="overview-item"><span>ETH</span><span>$677.52</span></div>
+                <div class="overview-item"><span>USDT</span><span>$57.76</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart">
+        <h3>Profit and Loss</h3>
+        <canvas id="barChart"></canvas>
+    </div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+  const toggle = document.getElementById("menu-toggle");
+const sidebar = document.querySelector(".sidebar");
+
+toggle.addEventListener("click", () => {
+    sidebar.classList.toggle("active");
+});
+new Chart(document.getElementById('lineChart'),{
+type:'line',
+data:{
+labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+datasets:[{
+data:[30000,32000,31000,35000,40000,45000,50000],
+borderColor:'#00ffae',
+backgroundColor:'rgba(0,255,174,0.2)',
+fill:true,
+tension:0.4
+}]
+},
+options:{plugins:{legend:{display:false}}}
+});
+
+new Chart(document.getElementById('barChart'),{
+type:'bar',
+data:{
+labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+datasets:[{data:[500,1000,800,1200,700,1500,900],backgroundColor:'#00c896'}]
+},
+options:{plugins:{legend:{display:false}}}
+});
+
+new Chart(document.getElementById('donutChart'),{
+type:'doughnut',
+data:{
+labels:['BTC','ETH','USDT'],
+datasets:[{data:[50,40,10],backgroundColor:['#f7931a','#627eea','#00ffae']}]
+},
+options:{plugins:{legend:{display:false}}}
+});
+
+</script>
+
+
+{% endblock content %}
+
+<!--
     <section class="grid">
-      {% for stock in Watchdata %}
+      
       <div class="card">
-        <h3><a href="?symbol={{ key }}">{{ stock.symbol }}</a></h3>
+        <h5>{% if stock %} {{ stock.CompanyName }} {% else %} NA {% endif %}</h5>
+        <h3><a href="?symbol={{ key }}">({{ stock.symbol }})</a></h3>
         <p style="font-size:1.25rem; font-weight:bold;">
           {% if stock %} Price: ${{ stock.close_price }} {% else %} NA {% endif %}
+          {% if stock %} Date: {{ stock.nepal_dt }} {% else %} NA {% endif %}
         </p>
         <p>
           {% if stock %}
@@ -58,25 +237,21 @@
           {% else %} NA {% endif %}
         </p>
       </div>
-      {% endfor %}
     </section>
 
     <div class="content">
 
-      <!-- AI Predictions Chart -->
       <section class="card_ai">
         <h3>AI Price Prediction</h3>
         <div id="forecastChart" style="width:100%; height:100%;"></div>
       </section>
 
-      <!-- Right Container -->
       <div class="right_contain">
 
-        <!-- Balance Info -->
         <section class="amount">
           <div class="Opening_balance">
             <h4>Opening Balance</h4>
-            <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p>
+           <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p> 
           </div>
 
           <div class="Today_investment">
@@ -90,7 +265,6 @@
           </div>
         </section>
 
-        <!-- Buy / Sell -->
         <form class="trade_buttons" method="POST">
           {% csrf_token %}
           <input type="hidden" name="symbol" id="trade_symbol">
@@ -98,7 +272,6 @@
           <button type="submit" name="action" value="sell" class="sell_btn">SELL</button>
         </form>
 
-        <!-- Latest Transactions -->
         <section class="card_data">
           <h3>Latest Transaction</h3>
           <table>
@@ -139,6 +312,5 @@
     </div>
 
   </main>
-</div>
+</div> -->
 
-{% endblock content %}

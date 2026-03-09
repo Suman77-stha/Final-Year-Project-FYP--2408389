@@ -1,0 +1,90 @@
+
+{% extends "base.html" %}
+{% block title %} About Us {% endblock title %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/CSS/About.css">
+<!-- ===== NAVBAR ===== -->
+<header class="navbar">
+    <div class="logo">TradeVision AI</div>
+    <div id="menu-icon">&#9776;</div>
+    <ul class="nav-links">
+        <li><a href="{% url 'Home' %}">Home</a></li>
+        <li><a href="{% url 'About' %}">About</a></li>
+        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li><a href="{% url 'Sign_In' %}">Sign In</a></li>
+    </ul>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="about-hero">
+    <h1>About <span>Trade Vision AI</span></h1>
+    <p>
+        A Final Year Project developed by <strong>Suman Shrestha</strong>, 
+        focused on building an AI-powered stock market prediction and automated trading system.
+    </p>
+</section>
+
+<!-- ===== ABOUT ME ===== -->
+<section class="section">
+    <h2>About Me</h2>
+    <p>
+        My name is <strong>Suman Shrestha</strong>, and I developed Trade Vision AI 
+        as my Final Year Project. I am passionate about Artificial Intelligence, 
+        Machine Learning, and Financial Technology. This project represents my research 
+        and implementation of deep learning models applied to real-world stock market data.
+    </p>
+</section>
+
+<!-- ===== PROJECT DESCRIPTION ===== -->
+<section class="section">
+    <h2>What Is This Project About?</h2>
+    <p>
+        Trade Vision AI is a web-based intelligent trading assistant that uses 
+        LSTM deep learning models to analyze historical stock market data and 
+        predict future price movements. It integrates real-time financial data, 
+        AI-based decision-making, and automated trading capabilities.
+    </p>
+
+    <p>
+        The system provides Buy, Sell, and Hold recommendations based on 
+        predictive modeling and technical analysis indicators.
+    </p>
+</section>
+
+<!-- ===== TECHNOLOGIES ===== -->
+<section class="section">
+    <h2>Technologies Used</h2>
+
+    <div class="tech-list">
+        <div class="tech-item">Python</div>
+        <div class="tech-item">Django Framework</div>
+        <div class="tech-item">LSTM Neural Network</div>
+        <div class="tech-item">TensorFlow / Keras</div>
+        <div class="tech-item">REST API Integration</div>
+        <div class="tech-item">HTML, CSS, JavaScript</div>
+    </div>
+
+</section>
+
+<!-- ===== MISSION ===== -->
+<section class="section">
+    <h2>Mission & Vision</h2>
+    <p>
+        The mission of this project is to make intelligent stock trading 
+        accessible through AI-driven insights and automation. The vision is to 
+        create a scalable fintech platform that enhances decision-making 
+        using advanced predictive analytics.
+    </p>
+</section>
+
+<!-- ===== CONTACT ===== -->
+<section class="contact">
+    <h2>Contact Me</h2>
+    <p><strong>Name:</strong> Suman Shrestha</p>
+    <p><strong>Email:</strong> np03cs4a230174@heraldcollege.edu.np</p>
+    <p><strong>Phone:</strong> +977-9818664671</p>
+    <p><strong>Location:</strong> Nepal</p>
+</section>
+
+{% endblock content %}
