@@ -1,28 +1,26 @@
-# AI STOCK PRICE PREDICTION MODULE
+# ==========================================
+# AI STOCK PRICE PREDICTION (LLM Qwen3.5-35B)
+# ==========================================
 
-import os
-import json
 import datetime
 import pytz
-import numpy as np
 import yfinance as yf
-import joblib
+import torch
+import re
+import json
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import r2_score
-from tensorflow import keras  # type: ignore
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
+# ==========================================
 # CONFIG
-
-BASE_MODEL_DIR = "models"
-os.makedirs(BASE_MODEL_DIR, exist_ok=True)
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
+# ==========================================
 TIMEZONE = pytz.timezone("Asia/Kathmandu")
+PREDICT_DAYS = 7  # Number of days to forecast
+RECENT_DAYS = 30  # Last N days of closing prices
 
+# ==========================================
 # DATA LOADING
-
+# ==========================================
 def load_stock_data(symbol):
     START = "2015-01-01"
     TODAY = datetime.datetime.now(TIMEZONE).date()
@@ -32,189 +30,115 @@ def load_stock_data(symbol):
     if data.empty:
         raise ValueError(f"No data found for symbol: {symbol}")
 
+    if "Close" not in data.columns:
+        raise ValueError(f"'Close' column not found in data for {symbol}")
+
     data.reset_index(inplace=True)
     return data
 
+# ==========================================
+# LOAD QWEN MODEL
+# ==========================================
+def load_qwen_model():
+    print("Loading Qwen3.5-35B-A3B model...")
+    model_name = "Qwen/Qwen3.5-7B"
 
-# MODEL SAVE / LOAD HELPERS
-
-def save_model_bundle(symbol, model, scaler):
-    symbol_dir = os.path.join(BASE_MODEL_DIR, symbol)
-    os.makedirs(symbol_dir, exist_ok=True)
-
-    model.save(os.path.join(symbol_dir, "model.h5"))
-    joblib.dump(scaler, os.path.join(symbol_dir, "scaler.pkl"))
-
-    meta = {
-        "symbol": symbol,
-        "trained_on": datetime.date.today().isoformat()
-    }
-
-    with open(os.path.join(symbol_dir, "meta.json"), "w") as f:
-        json.dump(meta, f)
-
-
-def load_model_and_scaler(symbol):
-    symbol_dir = os.path.join(BASE_MODEL_DIR, symbol)
-
-    model_path = os.path.join(symbol_dir, "model.h5")
-    scaler_path = os.path.join(symbol_dir, "scaler.pkl")
-    meta_path = os.path.join(symbol_dir, "meta.json")
-
-    if not all(map(os.path.exists, [model_path, scaler_path, meta_path])):
-        return None, None
-
-    with open(meta_path, "r") as f:
-        meta = json.load(f)
-
-    today = datetime.date.today().isoformat()
-
-    #  Strict validation
-    if meta.get("symbol") != symbol or meta.get("trained_on") != today:
-        print(" Old or mismatched model detected.")
-        return None, None
-
-    model = keras.models.load_model(model_path, compile=False)
-    model.compile(
-        optimizer="adam",
-        loss=keras.losses.MeanAbsoluteError()
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        device_map="auto",
+        torch_dtype=torch.float16
     )
+    model.eval()
+    return tokenizer, model
 
-    scaler = joblib.load(scaler_path)
+# ==========================================
+# CREATE PROMPT FOR LLM
+# ==========================================
+def create_prompt(symbol, recent_prices, predict_days=PREDICT_DAYS):
+    """
+    Formats recent prices into a prompt for Qwen3.5
+    """
+    prompt = f"""
+You are a financial expert. Given the recent closing prices for {symbol}:
 
-    print("Loaded cached model for today.")
-    return model, scaler
+{recent_prices}
 
+Predict the next {predict_days} days of closing prices as a JSON array of numbers only. 
+Do not include explanations or text, only output a JSON array.
+"""
+    return prompt
 
-# MODEL TRAINING
+# ==========================================
+# PREDICTION FUNCTION
+# ==========================================
+def predict_stock_price(symbol="AAPL", recent_days=RECENT_DAYS, predict_days=PREDICT_DAYS):
+    print(f"\nPredicting stock price for {symbol} using Qwen3.5-35B...")
 
-def train_model(symbol):
-    print(f"Training model for {symbol}...")
-
+    # Load stock data
     data = load_stock_data(symbol)
-    close_prices = data["Close"].values.reshape(-1, 1)
-
-    scaler = StandardScaler()
-    scaled_data = scaler.fit_transform(close_prices)
-
-    train_len = int(len(scaled_data) * 0.95)
-    train_data = scaled_data[:train_len]
-
-    X_train, y_train = [], []
-
-    for i in range(60, len(train_data)):
-        X_train.append(train_data[i - 60:i, 0])
-        y_train.append(train_data[i, 0])
-
-    X_train = np.array(X_train).reshape(-1, 60, 1)
-    y_train = np.array(y_train)
-
-    model = keras.Sequential([
-        keras.layers.LSTM(64, return_sequences=True, input_shape=(60, 1)),
-        keras.layers.LSTM(64),
-        keras.layers.Dense(128, activation="relu"),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(1)
-    ])
-
-    model.compile(
-        optimizer="adam",
-        loss=keras.losses.MeanAbsoluteError()
-    )
-
-    model.fit(
-        X_train,
-        y_train,
-        epochs=20,
-        batch_size=32,
-        verbose=1
-    )
-
-    save_model_bundle(symbol, model, scaler)
-
-    return model, scaler
-
-
-# MAIN PREDICTION FUNCTION
-
-def predict_stock_price(symbol="AAPL", period=7):
-    print(f"\n Predicting stock price for: {symbol}")
-
-    model, scaler = load_model_and_scaler(symbol)
-
-    if model is None:
-        model, scaler = train_model(symbol)
+    # Safe conversion to list
+    if "Close" in data.columns:
+        close_prices = data["Close"].values.flatten().tolist()
     else:
-        print("Using cached model.")
+        raise ValueError(f"'Close' column not found in data for {symbol}")      # Convert Series to list
+    recent_prices = close_prices[-recent_days:]  # Last 30 days
 
-    data = load_stock_data(symbol)
-    close_prices = data["Close"].values.reshape(-1, 1)
+    # Load model
+    tokenizer, model = load_qwen_model()
 
-    scaled_data = scaler.transform(close_prices)
+    # Create prompt
+    prompt = create_prompt(symbol, recent_prices, predict_days)
 
-    train_len = int(len(scaled_data) * 0.95)
-    test_data = scaled_data[train_len - 60:]
+    # Tokenize and move to GPU
+    inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
 
-    X_test = []
-
-    for i in range(60, len(test_data)):
-        X_test.append(test_data[i - 60:i, 0])
-
-    if X_test:
-        X_test = np.array(X_test).reshape(-1, 60, 1)
-        predictions = model.predict(X_test, verbose=0)
-        predictions = scaler.inverse_transform(predictions)
-
-        actual = close_prices[train_len:]
-        r2 = r2_score(actual, predictions)
-    else:
-        predictions = np.array([[close_prices[-1][0]]])
-        r2 = 0.0
-
-    #Future prediction
-    last_60 = scaled_data[-60:]
-    current_input = last_60.reshape(1, 60, 1)
-
-    future_predictions = []
-
-    for _ in range(period):
-        next_price = model.predict(current_input, verbose=0)
-        future_predictions.append(next_price[0, 0])
-
-        current_input = np.append(
-            current_input[:, 1:, :],
-            [[[next_price[0, 0]]]],
-            axis=1
+    # Generate predictions
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=50,
+            temperature=0.0,
+            do_sample=False
         )
 
-    future_predictions = scaler.inverse_transform(
-        np.array(future_predictions).reshape(-1, 1)
-    ).flatten()
+    # Decode output
+    prediction_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    # Extract JSON array from text
+    match = re.search(r"\[.*\]", prediction_text)
+    if match:
+        future_predictions = json.loads(match.group())
+    else:
+        future_predictions = []
+
+    # Safe fallback
+    predicted_price = future_predictions[-1] if future_predictions else None
 
     return {
         "symbol": symbol,
-        "current_price": float(close_prices[-1][0]),
-        "close_prices": data["Close"],
-        "predicted_price": float(predictions[-1][0]),
-        "accuracy": round(r2 * 100, 2),
-        "future_days": future_predictions.tolist()
+        "current_price": close_prices[-1],
+        "close_prices": recent_prices,
+        "predicted_price": predicted_price,
+        "future_days": future_predictions
     }
 
-
-# ================================
-# TERMINAL EXECUTION
-# ================================
-
+# ==========================================
+# TERMINAL TEST
+# ==========================================
 if __name__ == "__main__":
-    result = predict_stock_price(symbol="TSLA", period=7)
+    result = predict_stock_price("TSLA")
 
-    print("\n AI STOCK PRICE PREDICTION")
-    print("-" * 40)
-    print(f"Symbol          : {result['symbol']}")
-    print(f"Current Price  : ${result['current_price']:.2f}")
-    print(f"Predicted Price: ${result['predicted_price']:.2f}")
-    print(f"Accuracy       : {result['accuracy']}%")
+    print("\nAI STOCK PRICE PREDICTION (Qwen3.5)")
+    print("--------------------------------")
+    print("Symbol:", result["symbol"])
+    print("Current Price:", result["current_price"])
+    print("Predicted Price (Day 7):", result["predicted_price"])
 
-    print("\n 7-Day Forecast:")
-    for i, price in enumerate(result["future_days"], start=1):
+    print("\nLast 30 Days Closing Prices:")
+    for i, price in enumerate(result["close_prices"], 1):
+        print(f"Day {i}: ${price:.2f}")
+
+    print("\n7 Day Forecast:")
+    for i, price in enumerate(result["future_days"], 1):
         print(f"Day {i}: ${price:.2f}")

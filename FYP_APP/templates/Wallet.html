@@ -1,219 +1,267 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Smooth Voice Mesh</title>
+{% extends "base.html" %}
+{% block title %} Wallet {% endblock title %}
 
-<style>
-body {
-    margin: 0;
-    background: #050816;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
+{% block content %}
+<link rel="stylesheet" href="/static/CSS/wallet.css">
+
+<div class="header">
+
+    <div class="header-left">
+        <i class='bx bx-menu' id="menu-toggle"></i>
+        <div class="logo">TradeVision AI</div>
+        <div>Hi Suman</div>
+    </div>
+
+    <!-- SEARCH FORM -->
+    <form class="search" method="GET">
+        <div class="search-box">
+            <i class="bx bx-search"></i>
+            <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
+        </div>
+
+        <datalist id="recentList">
+            {% for s in recent_symbols %}
+                <option value="{{ s }}">
+            {% endfor %}
+        </datalist>
+    </form>
+
+    <div class="header-right">
+        <i class="bx bx-bell"></i>
+        <i class="bx bxs-user"></i>
+    </div>
+
+</div>
 
 
-</style>
-</head>
+<div class="sub-container">
 
-<body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <ul class="menu">
+            <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+            <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+            <li><i class='bx bx-trending-up'></i> Trading</li>
+            <li><i class='bx bxs-robot'></i> AI Assistant</li>
+            <li><i class='bx bx-briefcase'></i> Portfolio</li>
+            <li><i class='bx bx-refresh'></i> Swap</li>
+            <li><i class='bx bx-cog'></i> Settings</li>
+        </ul>
+    </div>
 
-<div class="glow"></div>
-<canvas id="meshCanvas"></canvas>
+    <!-- MAIN -->
+    <div class="main">
 
-<script>
-const canvas = document.getElementById('meshCanvas');
-const ctx = canvas.getContext('2d');
+        <h3>Wallet</h3>
 
-/* ---------- Retina Smooth Canvas ---------- */
-const size = 400;
-const dpr = window.devicePixelRatio || 1;
-canvas.width = size * dpr;
-canvas.height = size * dpr;
-canvas.style.width = size + "px";
-canvas.style.height = size + "px";
-ctx.scale(dpr, dpr);
-/* ------------------------------------------ */
+        <!-- FIRST SECTION -->
+        <section class="first-section">
 
-let particles = [];
-const particleCount = 280;
-let baseRadius = 180;      // Bigger circle
-let maxRadius = baseRadius;
-let time = 0;
+            <!-- BALANCE -->
+            <div class="balance">
 
-let destroyProgress = 0;   // Smooth destroy transition
-let destroyDirection = 1;
+                <section>
 
-let mouse = { x: -1000, y: -1000 };
-let audioLevel = 0;
+                    <!-- LEFT SIDE -->
+                    <div class="left-price">
 
-/* ---------- Voice Detection ---------- */
-async function initMic() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
+                        <div class="up">
+                            <div class="icon-box">
+                                <i class="bx bx-credit-card-alt"></i>
+                            </div>
 
-        const source = audioCtx.createMediaStreamSource(stream);
-        source.connect(analyser);
+                            <div class="text-box">
+                                <div class="price">${{ balance }}</div>
+                                <span>Total Balance</span>
+                            </div>
+                        </div>
 
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                        <div class="down">
+                            <div class="icon-box">
+                                <i class="bx bx-wallet"></i>
+                            </div>
 
-        function updateAudio() {
-            analyser.getByteFrequencyData(dataArray);
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-                sum += dataArray[i];
-            }
-            audioLevel = (sum / dataArray.length) / 255;
-            requestAnimationFrame(updateAudio);
-        }
-        updateAudio();
-    } catch (err) {
-        console.log("Mic denied.");
-    }
-}
-initMic();
-/* ------------------------------------- */
+                            <div class="text-box">
+                                <div class="price">${{ balance }}</div>
+                                <span>Closing Balance</span>
+                            </div>
+                        </div>
 
-class Particle {
-    constructor(id) {
-        this.id = id;
-        this.init();
-    }
+                    </div>
+                    <!-- CARD -->
+                    <div class="card">
+                        <div class="card-grid">
 
-    init() {
-        const angle = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random()) * maxRadius;
-        this.x = size/2 + Math.cos(angle) * r;
-        this.y = size/2 + Math.sin(angle) * r;
-        this.vx = 0;
-        this.vy = 0;
-        this.size = Math.random() * 2 + 1;
-        this.speed = 0.015 + Math.random() * 0.03;
-    }
+                            <div class="mastercard">
 
-    update() {
-        const centerX = size/2;
-        const centerY = size/2;
+                                <div class="card-top">
+                                    <p class="card-brand">Mastercard</p>
+                                    <div class="card-chip"></div>
+                                </div>
 
-        /* Smooth breathing animation */
-        let breathing = Math.sin(time * 0.6) * 25;
+                                <p class="card-number">1111 2222 3333 4444</p>
 
-        /* Voice vibration */
-        let vibration = audioLevel * 60;
+                                <div class="card-bottom">
 
-        /* Smooth destroy morph */
-        let chaos = destroyProgress * 120;
+                                    <div class="card-holder">
+                                        <p class="label">Card Holder</p>
+                                        <p class="value">JORDAN BELFORD</p>
+                                    </div>
 
-        let angle = (this.id / particleCount) * Math.PI * 2 + (time * 0.3);
+                                    <div class="card-expiry">
+                                        <p class="label">Expiry</p>
+                                        <p class="value">01/23</p>
+                                    </div>
 
-        let r = (maxRadius * 0.7)
-              + Math.sin(time + this.id) * 20
-              + breathing
-              + vibration
-              + (Math.random() - 0.5) * chaos;
+                                </div>
 
-        let tx = centerX + Math.cos(angle) * r;
-        let ty = centerY + Math.sin(angle) * r;
+                            </div>
 
-        this.vx += (tx - this.x) * this.speed;
-        this.vy += (ty - this.y) * this.speed;
+                        </div>
+                    </div>
 
-        /* Mouse air push */
-        let dx = this.x - mouse.x;
-        let dy = this.y - mouse.y;
-        let d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 120) {
-            this.vx += (dx / d) * 2;
-            this.vy += (dy / d) * 2;
-        }
 
-        this.vx *= 0.93;
-        this.vy *= 0.93;
+                    <!-- RIGHT SIDE -->
+                    <div class="right-price">
 
-        this.x += this.vx;
-        this.y += this.vy;
+                        <div class="up">
+                            <div class="icon-box">
+                                <i class="bx bx-trending-up"></i>
+                            </div>
 
-        /* Circular boundary */
-        let dist = Math.hypot(this.x - centerX, this.y - centerY);
-        if (dist > maxRadius) {
-            let angle = Math.atan2(this.y - centerY, this.x - centerX);
-            this.x = centerX + Math.cos(angle) * maxRadius;
-            this.y = centerY + Math.sin(angle) * maxRadius;
-            this.vx *= -0.5;
-            this.vy *= -0.5;
-        }
-    }
+                            <div class="text-box">
+                                <div class="price">${{ today_income }}</div>
+                                <span>Today Income</span>
+                            </div>
+                        </div>
 
-    draw() {
-        ctx.fillStyle = '#93c5fd';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
+                        <div class="down">
+                            <div class="icon-box">
+                                <i class="bx bx-trending-down"></i>
+                            </div>
 
-function init() {
-    for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle(i));
-    }
-}
+                            <div class="text-box">
+                                <div class="price">${{ today_expense }}</div>
+                                <span>Today Expenses</span>
+                            </div>
+                        </div>
 
-function animate() {
-    ctx.fillStyle = 'rgba(5,8,22,0.18)';
-    ctx.fillRect(0, 0, size, size);
+                    </div>
+                    <div class="Donut-Chart">
 
-    time += 0.02;
+                    <div class="donut-graph">
+                        <div class="donut"></div>
+                    </div>
+                    
+                    <div class="donut-symbol">
+                        <span class="dot"></span>
+                        <div class="symbol">BTC</div>
+                    </div>
 
-    /* Smooth destroy / rearrange cycle */
-    if (Math.floor(time) % 12 < 6) {
-        destroyDirection = 1;
-    } else {
-        destroyDirection = -1;
-    }
-    destroyProgress += destroyDirection * 0.01;
-    destroyProgress = Math.max(0, Math.min(1, destroyProgress));
+                    <div class="Donut-profit-loss">
+                        <div class="price">+$50.000</div>
+                    </div>
 
-    for (let i = 0; i < particles.length; i++) {
-        particles[i].update();
-        particles[i].draw();
+                </div>
+                </section>
+            </div>
+        </section>
 
-        for (let j = i + 1; j < particles.length; j++) {
-            let dx = particles[i].x - particles[j].x;
-            let dy = particles[i].y - particles[j].y;
-            let distSq = dx*dx + dy*dy;
 
-            let minDist = 80 - destroyProgress * 40;
+        <!-- SECOND SECTION -->
+        <section class="second-section">
 
-            if (distSq < minDist * minDist) {
-                let opacity = (1 - Math.sqrt(distSq)/minDist) * 0.5;
-                ctx.strokeStyle = `rgba(147,197,253,${opacity})`;
-                ctx.lineWidth = 0.7;
-                ctx.beginPath();
-                ctx.moveTo(particles[i].x, particles[i].y);
-                ctx.lineTo(particles[j].x, particles[j].y);
-                ctx.stroke();
-            }
-        }
-    }
+            <!-- LEFT SIDE -->
+            <div class="left-side">
 
-    requestAnimationFrame(animate);
-}
+                <div class="left-side-header">
+                    <h4>Recent Activity</h4>
 
-window.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = e.clientX - rect.left;
-    mouse.y = e.clientY - rect.top;
-});
+                    <div class="today-date">
+                        <i class="bx bx-calendar">March 2026</i>
+                        <i class="bx bx-chevron-down"></i>
+                    </div>
 
-init();
-animate();
-</script>
+                </div>
+                <section class="left-activity-container">
+                <div class="date-group">22 Mar, 2022</div>
+                
+                <table class="activity-table">
 
-</body>
-</html>
+                    <tbody>
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td class="icon">🏢</td>
+
+                            <td class="name">
+                                {{ tx.symbol }} <br>
+                                <span>{{ tx.created_at|time:"H:i" }}</span>
+                            </td>
+
+                            <td class="status">
+                                {% if tx.transaction_type == "BUY" %}
+                                <div class="dot" style="
+                                    width:8px;
+                                    height:8px;
+                                    border-radius:50%;
+                                    background:#22c55e;"></div>
+                                    <span>Buy</span>
+                                {% else %}
+                                <div class="dot" style="
+                                    width:8px;
+                                    height:8px;
+                                    border-radius:50%;
+                                    background:#ef4444;"></div>
+                                    <span>Sell</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="quantity">{{ tx.quantity }}</td>
+                            <td class="price">${{ tx.price|floatformat:3 }}</td>
+                            <td class="total">+${{ tx.total|floatformat:3 }}</td>
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+                </section>
+            </div>
+
+
+            <!-- RIGHT SIDE -->
+            <div class="right-side">
+
+                <div class="area-chart">
+
+                    <div class="chart-header">
+
+                        <div class="chart-text">
+                            <h3>last 7 days</h3>
+                            <h4>Recent activity</h4>
+                        </div>
+
+                        <div class="chart-buttons">
+                            <button class="active">1D</button>
+                            <button>7D</button>
+                            <button>1W</button>
+                            <button>7W</button>
+                            <button>1M</button>
+                            <button>5M</button>
+                        </div>
+
+                    </div>
+
+                    <div class="chart-body"></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>
+
+{% endblock content %}

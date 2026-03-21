@@ -78,6 +78,11 @@
     justify-content:space-between;
     border-right:1px solid #1f2f2f;
 }
+.sidebar li a {
+    text-decoration: none;   /* removes underline */
+    color: inherit;          /* keeps same color as parent */
+    display: block;          /* makes the whole area clickable */
+}
 
 .menu{
     list-style:none;
@@ -125,6 +130,7 @@
     flex:1;
     min-height: 180px;
     position: relative;
+    max-width: 25%;
 }
 .crypto-card h5{
     font-size:16px;
@@ -155,27 +161,102 @@
     text-align: center;
     
 }
+/* graph container */
 .s_graph{
     width:100%;
     height:80px;
-    background:#5e17bb;
-    border-radius:5px;
-    margin-top:10px;
-    position: absolute;
-    bottom :0;
-    right:0;
+    position:absolute;
+    bottom:10px;
+    left:0;
 }
 
+/* chart canvas */
+.s_graph canvas{
+    width:100% !important;
+    height:80px !important;
+}
 
 /* DASHBOARD LAYOUT */
 .dashboard-layout{
     display:flex;
     gap:10px;
+    /* background-color: #5e17bb; */
 }
 
 .left-section{
     width:60%;
-    max-height: 250px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+.ai-table-container {
+    max-height: 400px; /* Adjust the max height as needed */
+    overflow-y: auto;  /* Enable vertical scroll */
+    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;  /* IE 10+ */ 
+    border-radius: 15px;
+    border: 1px solid #1f2f2f;
+    background-color: #111818;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* Keep table full width */
+.ai-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ai-table thead {
+    background-color: #1f2f2f;
+    position: sticky;
+    top: 0; 
+}
+
+.ai-table thead th {
+    color:#00c896;
+    text-align: left;
+    padding: 12px 15px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.ai-table tbody tr {
+    border-bottom: 1px solid #1f2f2f;
+    transition: background 0.3s;
+}
+
+.ai-table tbody tr:hover {
+    background-color: #1a2626;
+}
+
+.ai-table tbody td {
+    color: #e0e0e0;
+    padding: 12px 10px;
+    font-size: 14px;
+}
+
+/* Optional: Add color for AI suggestion */
+.ai-table tbody td:nth-child(4) {
+    font-weight: 600;
+}
+
+/* Optional: Responsive design */
+@media (max-width: 768px) {
+    .ai-table thead {
+        display: none; /* hide headers on small screens */
+    }
+    .ai-table tbody td {
+        display: block;
+        text-align: right;
+        padding: 10px;
+        position: relative;
+    }
+    .ai-table tbody td::before {
+        content: attr(data-label);
+        float: left;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
 }
 
 .right-section{
@@ -186,14 +267,26 @@
 }
 
 /* CHART CARD */
-.chart{
+/* .chart{
     height:100%;
     background:#111818;
     border-radius:15px;
     padding:20px;
     border:1px solid #1f2f2f;
     width: 100%;
+} */
+.chart{
+    width: 100%;
+    height: 350px;     /* FIXED HEIGHT */
+    max-height: 350px;
+    background:#111818;
+    border-radius:15px;
+    padding:20px;
+    border:1px solid #1f2f2f;
+    position: relative;
+    overflow: hidden;
 }
+
 
 canvas{
     margin-top:15px;
@@ -266,6 +359,69 @@ canvas{
     justify-content:space-between;
     font-size:13px;
 }
+.amount {
+    display: flex;
+    gap: 15px;
+    background: #111818;
+    padding: 15px;
+    border-radius: 12px;
+    justify-content: space-between;
+    border: 1px solid #1f2f2f;
+}
+
+.amount div {
+    flex: 1;
+    text-align: center;
+}
+
+.amount h4 {
+    font-size: 14px;
+    font-weight: 500;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.amount p {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1affc6;
+}
+.trade_buttons{
+    display: flex;
+    gap: 10px;
+}
+.trade_buttons button{
+    font-weight: 500;
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #1f2f2f;
+    background: #151c1c;
+    /* color: white; */
+    font-size: 14px;
+    cursor: pointer;
+}
+.main.shifted {
+    margin-left: 250px; /* same as sidebar width */
+    transition: margin 0.3s ease;
+}
+.buy_btn{
+    /* background: #1affc6; */
+    color: #1affc6;
+}
+.buy_btn:hover{
+    background:#00a844;
+    color:white
+}
+.sell_btn{
+    /* background: #fa6576; */
+    color: #fa6576;
+}
+.sell_btn:hover{
+    background:#d93200;
+    color: white;
+}
+
 /* ============================= */
 /* 📱 MOBILE RESPONSIVE DESIGN */
 /* ============================= */
@@ -373,4 +529,158 @@ canvas{
         margin:auto;
     }
 
+}
+
+
+
+/* MODAL BACKGROUND */
+
+.trade-modal{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.65);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+
+
+
+/* MODAL BOX */
+
+.trade-box{
+    background:#0f172a;
+    width:420px;
+    padding:30px;
+    border-radius:12px;
+    position:relative;
+    box-shadow:0 0 30px rgba(0,0,0,0.6);
+}
+
+
+
+/* CLOSE BUTTON */
+
+.close-btn{
+    position:absolute;
+    top:15px;
+    right:20px;
+    font-size:20px;
+    color:#ccc;
+    cursor:pointer;
+}
+
+.close-btn:hover{
+    color:white;
+}
+
+
+
+/* TITLE */
+
+.trade-box h3{
+    margin-bottom:20px;
+    color:white;
+    font-size:20px;
+}
+
+
+
+/* FORM */
+
+.trade-box form{
+    display:flex;
+    flex-direction:column;
+}
+
+
+
+/* LABEL */
+
+.trade-box label{
+    color:#9ca3af;
+    font-size:14px;
+    margin-top:10px;
+    margin-bottom:5px;
+}
+
+
+
+/* INPUT */
+
+.trade-box input{
+    padding:10px;
+    border-radius:6px;
+    border:1px solid #334155;
+    background:#020617;
+    color:white;
+    font-size:14px;
+}
+
+.trade-box input:focus{
+    outline:none;
+    border-color:#2962ff;
+}
+
+
+
+/* TOTAL FIELD */
+
+#trade_total{
+    background:#111827;
+}
+
+
+
+/* SUBMIT BUTTON */
+
+.submit_trade{
+    margin-top:20px;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#0ce458;
+    color:white;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.submit_trade:hover{
+    background:#00a844;
+}
+
+
+
+/* RESPONSIVE DESIGN */
+
+@media (max-width:768px){
+
+.trade-box{
+    width:90%;
+    padding:25px;
+}
+
+.trade_buttons{
+    flex-direction:column;
+}
+
+.buy_btn,
+.sell_btn{
+    width:100%;
+}
+
+}
+.chart {
+    min-height: 350px;
+}
+
+canvas {
+    width: 100% !important;
+    height: 100% !important;
 }

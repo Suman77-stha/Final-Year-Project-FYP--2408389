@@ -68,4 +68,5 @@ def get_stock_data(symbol):
 
     return data
 
-print(get_stock_data("AAPL"))
+if __name__ == "__main__":
+    print(get_stock_data("AAPL"))

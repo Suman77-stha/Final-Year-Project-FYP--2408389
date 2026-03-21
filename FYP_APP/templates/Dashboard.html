@@ -1,28 +1,30 @@
 {% extends "base.html" %}
 {% block title %} Dashboard {% endblock title %}
+{% load static %}
 {% block content %}
 <link rel="stylesheet" href="/static/CSS/Overview.css">
+<link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="header">
     <div class="header-left">
-       <i class='bx bx-menu' id="menu-toggle"></i>
+        <i class='bx bx-menu' id="menu-toggle"></i>
         <div class="logo">TradeVision AI</div>
         <div>Hi Suman</div>
     </div>
-     <!-- SEARCH FORM -->
-     <form class="search" method="GET">
-            <div class="search-box">
-                <i class="bx bx-search"></i>
-                <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
-            </div>
+    <!-- SEARCH FORM -->
+    <form class="search" method="GET">
+        <div class="search-box">
+            <i class="bx bx-search"></i>
+            <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
+        </div>
 
-            <datalist id="recentList">
-                {% for s in recent_symbols %}
-                    <option value="{{ s }}">
-                {% endfor %}
-            </datalist>
-        </form>
-    
+        <datalist id="recentList">
+            {% for s in recent_symbols %}
+                <option value="{{ s }}">
+            {% endfor %}
+        </datalist>
+    </form>
 
     <div class="header-right">
         <i class="bx bx-bell"></i>
@@ -31,286 +33,272 @@
 </div>
 
 <div class="sub-container">
-
-<div class="sidebar">
-    <ul class="menu">
-        <li><i class='bx bx-bar-chart'></i> Overview</li>
-        <li><i class='bx bx-wallet'></i> Wallet</li>
-        <li><i class='bx bx-trending-up'></i> Trading</li>
-        <li><i class='bx bxs-robot'></i> AI Assistant</li>
-        <li><i class='bx bx-briefcase'></i> Portfolio</li>
-        <li><i class='bx bx-refresh'></i> Swap</li>
-    </ul>
-
-    <ul class="menu">
-        <li><i class='bx bx-cog'></i> Settings</li>
-    </ul>
-</div>
-
-<div class="main">
-  <h3>Overview</h3>
-        
-
-<div class="crypto-row">
-  {% for stock in Watchdata %}
-    <div class="crypto-card">
-      <h5>
-        {% if stock %}
-          {{ stock.CompanyName }}
-        {% else %}
-          NA
-        {% endif %}
-        (
-        {% if stock %}
-          {{ stock.symbol }}
-        {% else %}
-          NA
-        {% endif %}
-        )
-      </h5>
-      <p>Close Price</p>
-      <div>
-        <div class="price_sec">
-          {% if stock %}
-            ${{ stock.close_price }}
-          {% else %}
-            NA
-          {% endif %}
-        </div>
-
-        {% if stock %}
-          {% if stock.change > 0 %}
-            <span style="
-              color: #08a241;
-              width: 50px;
-              height: 25px;
-              border-radius: 15px;
-              background-color: #3bffce;
-              padding-left: 2px;
-              padding-right: 2px;
-              text-align: center;
-              display: inline-block;">
-              {{ stock.change }}
-            </span>
-          {% elif stock.change < 0 %}
-            <span style="
-              color: #bb0000;
-              width: 50px;
-              height: 25px;
-              border-radius: 15px;
-              background-color: #fa6576;
-              padding-left: 2px;
-              padding-right: 2px;
-              text-align: center;
-              display: inline-block;">
-              {{ stock.change }}
-            </span>
-          {% else %}
-            <span>{{ stock.change }}</span>
-          {% endif %}
-        {% else %}
-          NA
-        {% endif %}
-      </div>
-
-      <div class="s_graph"></div>
+    <div class="sidebar">
+        <ul class="menu">
+            <li> <a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+            <li> <a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+            <li><i class='bx bx-trending-up'></i> Trading</li>
+            <li><i class='bx bxs-robot'></i> AI Assistant</li>
+            <li><i class='bx bx-briefcase'></i> Portfolio</li>
+            <li><i class='bx bx-refresh'></i> Swap</li>
+            <li><i class='bx bx-cog'></i> Settings</li>
+        </ul>
     </div>
-  {% endfor %}
-</div>
 
-<div class="dashboard-layout">
+    <div class="main">
+        <h3>Overview</h3>
+        <div class="crypto-row">
+            {% for stock in Watchdata %}
+            <div class="crypto-card">
+                <h5>
+                    {% if stock %}
+                        {{ stock.CompanyName }}
+                    {% else %}
+                        NA
+                    {% endif %}
+                    (
+                    {% if stock %}
+                        {{ stock.symbol }}
+                    {% else %}
+                        NA
+                    {% endif %}
+                    )
+                </h5>
+                <p>Close Price</p>
+                <div>
+                    <div class="price_sec">
+                        {% if stock %}
+                            ${{ stock.close_price }}
+                        {% else %}
+                            NA
+                        {% endif %}
+                    </div>
 
-<div class="left-section">
-    <div class="chart">
+                    {% if stock %}
+                        {% if stock.change > 0 %}
+                        <span style="
+                            color: #08a241;
+                            width: 50px;
+                            height: 25px;
+                            border-radius: 15px;
+                            background-color: #3bffce;
+                            padding-left: 2px;
+                            padding-right: 2px;
+                            text-align: center;
+                            display: inline-block;">
+                            {{ stock.change }}
+                        </span>
+                        {% elif stock.change < 0 %}
+                        <span style="
+                            color: #bb0000;
+                            width: 50px;
+                            height: 25px;
+                            border-radius: 15px;
+                            background-color: #fa6576;
+                            padding-left: 2px;
+                            padding-right: 2px;
+                            text-align: center;
+                            display: inline-block;">
+                            {{ stock.change }}
+                        </span>
+                        {% else %}
+                        <span>{{ stock.change }}</span>
+                        {% endif %}
+                    {% else %}
+                        NA
+                    {% endif %}
+                </div>
 
-        <div class="chart-header">
-            <h3>Bitcoin Chart</h3>
-            <div class="chart-buttons">
-                <button class="active">1D</button>
-                <button>7D</button>
-                <button>1W</button>
-                <button>7W</button>
-                <button>1M</button>
-                <button>5M</button>
+                <div class="s_graph"></div>
             </div>
+            {% endfor %}
         </div>
 
-        <canvas id="lineChart"></canvas>
+        <div class="dashboard-layout">
+
+            <div class="left-section">
+                <div class="chart">
+    <div class="chart-header">
+        <h3 id="chartTitle">Bitcoin Chart</h3>
+        <div class="chart-buttons">
+            <button class="active" data-range="7D">7D</button>
+            <button data-range="1W">1W</button>
+            <button data-range="7W">7W</button>
+            <button data-range="1M">1M</button>
+            <button data-range="5M">5M</button>
+        </div>
     </div>
+    <canvas id="lineChart" style="height:400px;"></canvas>
 </div>
 
-<div class="right-section">
-
-    <div class="chart">
-        <h3>BTC</h3>
-
-        <div class="overview-content">
-            <div class="donut-wrapper">
-                <canvas id="donutChart"></canvas>
-                <div class="donut-center">
-                    <span style="font-size:16px;font-weight:bold;">$1,498.78</span>
-                    <span style="font-size:10px;color:#aaa;">Total Balance</span>
+                <!-- AI Prediction Section -->
+                <div class="chart">
+                    <h3>AI Prediction</h3>
+                    <div class="ai-table-container">
+                        <table class="ai-table">
+                            <thead>
+                                <tr>
+                                    <th>Company Name (Symbol)</th>
+                                    <th>Volume</th>
+                                    <th>Close Price</th>
+                                    <th>Ratio</th>
+                                    <th>AI Suggestion</th>
+                                    <th>Accuracy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stock in Watchdata %}
+                                <tr>
+                                    <td>
+                                        {% if stock %}
+                                            {{ stock.CompanyName }}
+                                        {% else %}
+                                            NA
+                                        {% endif %}
+                                        (
+                                        {% if stock %}
+                                            {{ stock.symbol }}
+                                        {% else %}
+                                            NA
+                                        {% endif %}
+                                        )
+                                    </td>
+                                    <td>{{ stock.volume }}</td>
+                                    <td>${{ stock.close_price }}</td>
+                                    <td>
+                                        {% if stock.change > 0 %}
+                                        <span style="color: #22c55e">{{ stock.change|floatformat:2 }}%</span>
+                                        {% elif stock.change < 0 %}
+                                        <span style="color: #ef4444">{{ stock.change|floatformat:2 }}%</span>
+                                        {% else %}
+                                        <span>{{ stock.change|floatformat:2 }}%</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ stock.suggestion }}</td>
+                                    <td>{{ stock.accuracy }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <div class="overview-list">
-                <div class="overview-item"><span>BTC</span><span>$763.51</span></div>
-                <div class="overview-item"><span>ETH</span><span>$677.52</span></div>
-                <div class="overview-item"><span>USDT</span><span>$57.76</span></div>
+            <div class="right-section">
+                <section class="amount">
+                    <div class="Opening_balance">
+                        <h4>Opening Balance</h4>
+                        <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p> 
+                    </div>
+
+                    <div class="Today_investment">
+                        <h4>Today Investment</h4>
+                        <p id="today_investment">${{ today_investment|floatformat:2 }}</p>
+                    </div>
+
+                    <div class="closing_balance">
+                        <h4>Closing Balance</h4>
+                        <p id="closing_balance">${{ closing_balance|floatformat:2 }}</p>
+                    </div>
+                </section>
+               <!-- BUY SELL BUTTONS -->
+                <form class="buy-sell-form">
+                    <div class="trade_buttons">
+                        <button type="button" class="buy_btn" onclick="openTrade('buy')">BUY</button>
+                        <button type="button" class="sell_btn" onclick="openTrade('sell')">SELL</button>
+                    </div>
+                </form>
+
+                <!-- TRADE MODAL -->
+                <div id="tradeModal" class="trade-modal">
+                    <div class="trade-box">
+                        <span class="close-btn" onclick="closeTrade()"><i class="bx bx-x"></i></span>
+                        <h3 id="tradeTitle">Trade</h3>
+                        {% if messages %}
+                         <div class="trade_messages">
+                             {% for message in messages %}
+                             <div class="alert {{ message.tags }}">
+                                 {{ message }}
+                             </div>
+                             {% endfor %}
+                         </div>
+                        {% endif %}
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" id="trade_action">
+                            <label>Symbol</label>
+                            <input type="text" name="symbol" id="trade_symbol" placeholder="AAPL" required>
+                            <label>Price</label>
+                            <input step="0.01" name="price" id="trade_price" readonly required>
+                            <label>Quantity</label>
+                            <input type="number" name="quantity" id="trade_qty" required>
+                            <label>Total</label>
+                            <input type="number" id="trade_total" readonly>
+                            <button type="submit" class="submit_trade">Submit Order</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="amount">
+    <div>
+        <h4>Total Invested</h4>
+        <p>{{ total_invested }}</p>
+    </div>
+
+    <div>
+        <h4>Current Value</h4>
+        <p>{{ total_current }}</p>
+    </div>
+
+    <div>
+        <h4>Total Profit</h4>
+        {% if total_profit > 0 %}
+        <p style="color:#22c55e">{{ total_profit }} </p>
+        {% else %}
+         <p style="color:#ef4444">{{ total_profit }}</p>
+         {% endif %}
+            
+    </div>
+</div>
+
+        <div class="ai-table-container">
+    <table class="ai-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Qty</th>
+                <th>Buy</th>
+                <th>Current</th>
+                <th>Invested</th>
+                <th>Value</th>
+                <th>Profit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in portfolio_data %}
+            <tr>
+                <td>{{ p.symbol }}</td>
+                <td>{{ p.quantity }}</td>
+                <td>{{ p.avg_price }}</td>
+                <td>{{ p.current_price }}</td>
+                <td>{{ p.invested }}</td>
+                <td>{{ p.current_value }}</td>
+                {% if p.profit > 0 %}
+                <td style="color:#22c55e#ef4444">{{ p.profit }}</td>
+                {% else %}
+                <td style="color:#ef4444">{{ p.profit }}</td>
+                {% endif %}
+                    
+               
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
             </div>
+
         </div>
     </div>
-
-    <div class="chart">
-        <h3>Profit and Loss</h3>
-        <canvas id="barChart"></canvas>
-    </div>
-
 </div>
-</div>
-
-</div>
-</div>
-
-<script>
-  const toggle = document.getElementById("menu-toggle");
-const sidebar = document.querySelector(".sidebar");
-
-toggle.addEventListener("click", () => {
-    sidebar.classList.toggle("active");
-});
-new Chart(document.getElementById('lineChart'),{
-type:'line',
-data:{
-labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
-datasets:[{
-data:[30000,32000,31000,35000,40000,45000,50000],
-borderColor:'#00ffae',
-backgroundColor:'rgba(0,255,174,0.2)',
-fill:true,
-tension:0.4
-}]
-},
-options:{plugins:{legend:{display:false}}}
-});
-
-new Chart(document.getElementById('barChart'),{
-type:'bar',
-data:{
-labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
-datasets:[{data:[500,1000,800,1200,700,1500,900],backgroundColor:'#00c896'}]
-},
-options:{plugins:{legend:{display:false}}}
-});
-
-new Chart(document.getElementById('donutChart'),{
-type:'doughnut',
-data:{
-labels:['BTC','ETH','USDT'],
-datasets:[{data:[50,40,10],backgroundColor:['#f7931a','#627eea','#00ffae']}]
-},
-options:{plugins:{legend:{display:false}}}
-});
-
-</script>
-
-
+<script src="{% static 'JS/dashboard.js' %}"></script>
 {% endblock content %}
-
-<!--
-    <section class="grid">
-      
-      <div class="card">
-        <h5>{% if stock %} {{ stock.CompanyName }} {% else %} NA {% endif %}</h5>
-        <h3><a href="?symbol={{ key }}">({{ stock.symbol }})</a></h3>
-        <p style="font-size:1.25rem; font-weight:bold;">
-          {% if stock %} Price: ${{ stock.close_price }} {% else %} NA {% endif %}
-          {% if stock %} Date: {{ stock.nepal_dt }} {% else %} NA {% endif %}
-        </p>
-        <p>
-          {% if stock %}
-            {% if stock.change > 0 %}
-              <span style="color: #22c55e">{{ stock.change }} ↑</span>
-            {% else %}
-              <span style="color: #ef4444">{{ stock.change }} ↓</span>
-            {% endif %}
-          {% else %} NA {% endif %}
-        </p>
-      </div>
-    </section>
-
-    <div class="content">
-
-      <section class="card_ai">
-        <h3>AI Price Prediction</h3>
-        <div id="forecastChart" style="width:100%; height:100%;"></div>
-      </section>
-
-      <div class="right_contain">
-
-        <section class="amount">
-          <div class="Opening_balance">
-            <h4>Opening Balance</h4>
-           <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p> 
-          </div>
-
-          <div class="Today_investment">
-            <h4>Today Investment</h4>
-            <p id="today_investment">$0.00</p>
-          </div>
-
-          <div class="closing_balance">
-            <h4>Closing Balance</h4>
-            <p id="closing_balance">$0.00</p>
-          </div>
-        </section>
-
-        <form class="trade_buttons" method="POST">
-          {% csrf_token %}
-          <input type="hidden" name="symbol" id="trade_symbol">
-          <button type="submit" name="action" value="buy" class="buy_btn">BUY</button>
-          <button type="submit" name="action" value="sell" class="sell_btn">SELL</button>
-        </form>
-
-        <section class="card_data">
-          <h3>Latest Transaction</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Symbol</th>
-                <th>Current Price</th>
-                <th>Change %</th>
-                <th>AI Suggestion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for key, stock in stock_data.items %}
-              <tr>
-                <td>{{ key }}</td>
-                <td>{% if stock %}${{ stock.close_price }}{% else %}NA{% endif %}</td>
-                <td>
-                  {% if stock %}
-                    {% if stock.change_percent > 0 %}
-                      <span style="color:#22c55e">
-                        {{ stock.change_percent|floatformat:2 }}% ↑
-                      </span>
-                    {% else %}
-                      <span style="color:#ef4444">
-                        {{ stock.change_percent|floatformat:2 }}% ↓
-                      </span>
-                    {% endif %}
-                  {% else %} NA {% endif %}
-                </td>
-                <td class="text-green">Buy</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </section>
-
-      </div>
-    </div>
-
-  </main>
-</div> -->
-

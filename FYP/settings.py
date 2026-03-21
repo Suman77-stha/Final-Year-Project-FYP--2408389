@@ -143,6 +143,12 @@ CACHES = {
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+from django.contrib.messages import constants as messages
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'error',
+    messages.SUCCESS: 'success',
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STOCKDATA_API_KEY = "RH1cObRmVBGqK0a9SmEBdJfs6LT5TsAEvxKbswCB"

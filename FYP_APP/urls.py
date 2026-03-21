@@ -9,8 +9,12 @@ urlpatterns = [
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('', views.landing_page_view, name='Home'),
     path('About/', views.about_view, name='About'),
-    path('Wallet/', views.wallet_view, name='Wallet'),
+    path('wallet/', views.wallet_view, name='wallet'),
+    path("get-live-price/", views.get_live_price, name="get_live_price"),
     path('AI_Assistance/', views.AI_Assistance_view, name='AI_Assistance'),
+    path('api/stock-prediction/', views.stock_prediction_api, name='stock_prediction_api'),
+    path("api/profit-loss/", views.profit_loss_api, name="profit_loss_api"),
+    path("api/stock_6month_api/",views.stock_6month_api,name="stock_6month_api"),
 
     path('forgot_password/', views.forgot_password, name='forgot_password'),
     path('password_reset_done/',
