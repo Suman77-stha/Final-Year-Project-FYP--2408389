@@ -1,6 +1,273 @@
-document.addEventListener("DOMContentLoaded", function () {
+// ===============================
+// GLOBAL VARIABLES
+// ===============================
+let mainChart;
+let miniCharts = {};
+let miniChartCache = {};
 
-    /* ===============================
+
+// ===============================
+// DATE LABEL GENERATOR
+// ===============================
+function formatDateLabels(historyLength, futureLength) {
+    const labels = [];
+    const today = new Date();
+
+    for (let i = historyLength; i > 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        labels.push(d.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+    }
+
+    for (let i = 1; i <= futureLength; i++) {
+        const d = new Date();
+        d.setDate(today.getDate() + i);
+        labels.push(d.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+    }
+
+    return labels;
+}
+
+
+// ===============================
+// MAIN CHART FUNCTION
+// ===============================
+function loadMainChart(symbol, range = "7D") {
+
+    const canvas = document.getElementById("lineChart");
+    if (!canvas) return;
+
+    fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=${range}`)
+        .then(res => res.json())
+        .then(data => {
+
+            const closePrices = data.close_prices || [];
+            const futurePrices = data.future_days || [];
+
+            const labels = formatDateLabels(closePrices.length, futurePrices.length);
+
+            const paddedClose = [...closePrices, ...new Array(futurePrices.length).fill(null)];
+            const paddedFuture = [...new Array(closePrices.length).fill(null), ...futurePrices];
+
+            if (mainChart) mainChart.destroy();
+
+            mainChart = new Chart(canvas, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Actual Price",
+                            data: paddedClose,
+                            borderColor: "#00ffae",
+                            backgroundColor: "rgba(0,255,174,0.2)",
+                            fill: true,
+                            tension: 0.45,
+                            pointRadius: 0
+                        },
+                        {
+                            label: "Prediction",
+                            data: paddedFuture,
+                            borderColor: "#ff9800",
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.45,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    interaction: {
+                        mode: "index",
+                        intersect: false
+                    },
+
+                    plugins: {
+                        legend: {
+                            labels: { color: "#ccc" }
+                        },
+                        tooltip: {
+                            backgroundColor: "#111",
+                            titleColor: "#fff",
+                            bodyColor: "#00ffae",
+                            borderColor: "#00ffae",
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label; // short date
+                                },
+                                label: function(context) {
+                                    if (context.parsed.y === null) return "";
+                                    return "$" + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+
+                    scales: {
+                        x: {
+                            ticks: { color: "#888" },
+                            grid: { color: "rgba(255,255,255,0.05)" }
+                        },
+                        y: {
+                            ticks: {
+                                color: "#888",
+                                callback: val => "$" + val
+                            },
+                            grid: { color: "rgba(255,255,255,0.05)" }
+                        }
+                    },
+
+                    hover: {
+                        mode: "nearest",
+                        intersect: false
+                    }
+                }
+            });
+
+            // ✅ POINTER CURSOR
+            canvas.style.cursor = "pointer";
+
+            // ✅ SYNC MINI CHART
+            const miniData = { labels, closePrices, paddedFuture };
+            miniChartCache[symbol] = miniData;
+
+            if (miniCharts[symbol]) {
+                updateMiniChart(symbol, miniData);
+            }
+
+            const title = document.getElementById("chartTitle");
+            if (title) title.innerText = symbol + " Price Prediction";
+        })
+        .catch(err => console.error("Chart error:", err));
+}
+
+
+// ===============================
+// CREATE / UPDATE MINI CHART
+// ===============================
+function createOrUpdateMiniChart(symbol, canvas) {
+
+    const ctx = canvas.getContext("2d");
+
+    if (miniChartCache[symbol]) {
+        if (miniCharts[symbol]) {
+            updateMiniChart(symbol, miniChartCache[symbol]);
+            return;
+        }
+    }
+
+    fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=7D`)
+        .then(res => res.json())
+        .then(data => {
+
+            const closePrices = data.close_prices || [];
+            const futurePrices = data.future_days || [];
+
+            const labels = formatDateLabels(closePrices.length, futurePrices.length);
+            const paddedFuture = [...new Array(closePrices.length).fill(null), ...futurePrices];
+
+            const chartData = { labels, closePrices, paddedFuture };
+            miniChartCache[symbol] = chartData;
+
+            if (miniCharts[symbol]) {
+                updateMiniChart(symbol, chartData);
+                return;
+            }
+
+            miniCharts[symbol] = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            data: closePrices,
+                            borderColor: "#00ffae",
+                            backgroundColor: "rgba(0,255,174,0.1)",
+                            fill: true,
+                            tension: 0.45,
+                            pointRadius: 0
+                        },
+                        {
+                            data: paddedFuture,
+                            borderColor: "#ff9800",
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.45,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: "#111",
+                            titleColor: "#fff",
+                            bodyColor: "#00ffae",
+                            borderColor: "#00ffae",
+                            borderWidth: 1,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    if (context.parsed.y === null) return "";
+                                    return "$" + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    },
+
+                    interaction: {
+                        mode: "index",
+                        intersect: false
+                    },
+
+                    hover: {
+                        mode: "nearest",
+                        intersect: false
+                    }
+                }
+            });
+
+            // ✅ POINTER
+            canvas.style.cursor = "pointer";
+        })
+        .catch(err => console.error("Mini chart error:", err));
+}
+
+
+// ===============================
+// UPDATE MINI CHART
+// ===============================
+function updateMiniChart(symbol, data) {
+    const chart = miniCharts[symbol];
+    if (!chart) return;
+
+    chart.data.labels = data.labels;
+    chart.data.datasets[0].data = data.closePrices;
+    chart.data.datasets[1].data = data.paddedFuture;
+
+    chart.update();
+}
+
+
+/* ===============================
        1. TRADE MODAL
     =============================== */
     window.openTrade = function (type) {
@@ -86,9 +353,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    /* ===============================
-       4. MINI STOCK GRAPHS
-    =============================== */
+// ===============================
+// DOM READY
+// ===============================
+document.addEventListener("DOMContentLoaded", function () {
+
+    // MINI CHART INIT
     document.querySelectorAll(".crypto-card").forEach(card => {
 
         const graphDiv = card.querySelector(".s_graph");
@@ -98,145 +368,21 @@ document.addEventListener("DOMContentLoaded", function () {
         graphDiv.innerHTML = "";
         graphDiv.appendChild(canvas);
 
-        const ctx = canvas.getContext("2d");
-
         const text = card.querySelector("h5")?.innerText || "";
         const symbolMatch = text.match(/\(([^)]+)\)/);
         const symbol = symbolMatch ? symbolMatch[1].trim().toUpperCase() : "TSLA";
 
-        fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=7D`)
-            .then(res => res.json())
-            .then(data => {
-
-                const closePrices = data.close_prices || [];
-                const futurePrices = data.future_prices || [];
-
-                const labels = [
-                    ...(data.history_labels || []),
-                    ...(data.future_labels || [])
-                ];
-
-                const predictionData = [
-                    ...new Array(closePrices.length).fill(null),
-                    ...futurePrices
-                ];
-
-                new Chart(ctx, {
-                    type: "line",
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                data: closePrices,
-                                borderColor: "#00ffae",
-                                backgroundColor: "rgba(0,255,174,0.1)",
-                                fill: true,
-                                tension: 0.4,
-                                pointRadius: 0
-                            },
-                            {
-                                data: predictionData,
-                                borderColor: "#ff9800",
-                                borderDash: [6, 6],
-                                tension: 0.4,
-                                pointRadius: 0
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { x: { display: false }, y: { display: false } }
-                    }
-                });
-
-            })
-            .catch(err => console.error("Mini chart error:", err));
+        createOrUpdateMiniChart(symbol, canvas);
     });
 
-
-    /* ===============================
-       5. MAIN BIG CHART
-    =============================== */
-    let mainChart;
-    let currentRange = "7D";
-
-    function loadMainChart(symbol, range = "7D") {
-
-        symbol = symbol.trim().toUpperCase();
-
-        fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=${range}`)
-            .then(res => {
-                if (!res.ok) throw new Error("API error");
-                return res.json();
-            })
-            .then(data => {
-
-                const closePrices = data.close_prices || [];
-                const futurePrices = data.future_prices || [];
-
-                const labels = [
-                    ...(data.history_labels || []),
-                    ...(data.future_labels || [])
-                ];
-
-                const predictionData = [
-                    ...new Array(closePrices.length).fill(null),
-                    ...futurePrices
-                ];
-
-                if (mainChart) mainChart.destroy();
-
-                const ctx = document.getElementById("lineChart");
-
-                mainChart = new Chart(ctx, {
-                    type: "line",
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: "Real Price",
-                                data: closePrices,
-                                borderColor: "#00ffae",
-                                backgroundColor: "rgba(0,255,174,0.15)",
-                                fill: true,
-                                tension: 0.4
-                            },
-                            {
-                                label: "Prediction",
-                                data: predictionData,
-                                borderColor: "#ff9800",
-                                borderDash: [6, 6],
-                                tension: 0.4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-
-                const title = document.getElementById("chartTitle");
-                if (title) title.innerText = symbol + " Chart";
-
-            })
-            .catch(err => console.error("Main chart error:", err));
-    }
-
-    // Load default chart
-    const urlParams = new URLSearchParams(window.location.search);
-    const symbol = (urlParams.get("symbol") || "AAPL").trim().toUpperCase();
+    // MAIN CHART LOAD
+    const params = new URLSearchParams(window.location.search);
+    let symbol = (params.get("symbol") || "AAPL").toUpperCase();
 
     loadMainChart(symbol, "7D");
 
-
-    /* ===============================
-       6. RANGE BUTTONS
-    =============================== */
+    // RANGE BUTTONS
     document.querySelectorAll(".chart-buttons button").forEach(btn => {
-
         btn.addEventListener("click", function () {
 
             document.querySelectorAll(".chart-buttons button")
@@ -244,77 +390,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
             this.classList.add("active");
 
-            currentRange = this.dataset.range;
-
-            loadMainChart(symbol, currentRange);
+            loadMainChart(symbol, this.dataset.range);
         });
     });
 
+    // TRADE INPUT EVENTS
+    const priceInput = document.getElementById("trade_price");
+    const qtyInput = document.getElementById("trade_qty");
 
-    /* ===============================
-       7. DONUT CHART
-    =============================== */
-    const donutCanvas = document.getElementById("donutChart");
+    if (priceInput) priceInput.addEventListener("input", updateTotal);
+    if (qtyInput) qtyInput.addEventListener("input", updateTotal);
 
-    if (donutCanvas) {
+    // AUTO PRICE FETCH
+    const symbolInput = document.getElementById("trade_symbol");
 
-        new Chart(donutCanvas, {
-            type: "doughnut",
-            data: {
-                labels: ["BTC", "ETH", "USDT"],
-                datasets: [{
-                    data: [763.51, 677.52, 57.76],
-                    backgroundColor: ["#f7931a","#627eea","#26a17b"],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: "70%",
-                plugins: { legend: { display: false } }
-            }
+    if (symbolInput) {
+        symbolInput.addEventListener("blur", function () {
+
+            const newSymbol = symbolInput.value.trim().toUpperCase();
+            if (!newSymbol) return;
+
+            fetch(`/FYP/get-live-price/?symbol=${newSymbol}`)
+                .then(res => res.json())
+                .then(data => {
+
+                    if (data.price !== null) {
+                        document.getElementById("trade_price").value = parseFloat(data.price).toFixed(2);
+                    }
+
+                    symbol = newSymbol;
+                    loadMainChart(symbol, "7D");
+
+                })
+                .catch(err => console.error(err));
         });
     }
 
-
-    /* ===============================
-       8. BAR CHART (6 MONTH P/L)
-    =============================== */
-    const barCanvas = document.getElementById("barChart");
-
-if (barCanvas) {
-
-    fetch(`/FYP/api/stock-6month/?symbol=${symbol}`)
-        .then(res => res.json())
-        .then(data => {
-
-            new Chart(barCanvas, {
-                type: "bar",
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: symbol + " (6M)",
-                        data: data.data,
-                        backgroundColor: data.data.map((v, i, arr) =>
-                            i > 0 && v > arr[i-1] ? "#22c55e" : "#ef4444"
-                        )
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-
-        })
-        .catch(err => console.error("Bar chart error:", err));
-}
-
-});
-document.addEventListener("DOMContentLoaded", function() {
-    const priceInput = document.getElementById("trade_price");
-    if (priceInput) {
-        priceInput.addEventListener("input", updateTotal);
-    }
 });
