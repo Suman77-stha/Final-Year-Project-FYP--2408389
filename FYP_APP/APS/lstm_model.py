@@ -20,7 +20,7 @@ CACHE_FILE = f"{SYMBOL}_xgb_cache.json"
 # LOAD STOCK DATA
 # ==========================================
 def load_stock_data(symbol):
-    data = yf.download(symbol, start="2015-01-01", progress=False)
+    data = yf.download(symbol, start="2023-01-01", progress=False)
     if data.empty:
         raise ValueError(f"No data for {symbol}")
     # Ensure 1D numpy array
@@ -69,7 +69,7 @@ def predict(symbol="AAPL", future_days=7):
 
     recent_prices = prices[-RECENT_DAYS:].tolist()
 
-    # 🔥 RECURSIVE PREDICTION (KEY FIX)
+    # ✅ RECURSIVE PREDICTION
     predictions = []
     temp_input = recent_prices.copy()
 
