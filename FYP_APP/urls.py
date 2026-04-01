@@ -14,6 +14,7 @@ urlpatterns = [
     path('AI_Assistance/', views.AI_Assistance_view, name='AI_Assistance'),
     path('api/stock-prediction/', views.stock_prediction_api, name='stock_prediction_api'),
     path("api/profit-loss/", views.profit_loss_api, name="profit_loss_api"),
+    path('trading_bot/', views.trading_bot_view, name='trading_bot'),
     path("api/stock_6month_api/",views.stock_6month_api,name="stock_6month_api"),
 
     path('forgot_password/', views.forgot_password, name='forgot_password'),
