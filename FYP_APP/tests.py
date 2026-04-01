@@ -1,3 +1,6 @@
-from django.test import TestCase
+# FYP_APP/tasks.py
+import threading
+from .lora_trainer import train_lora_model_dynamic
 
-# Create your tests here.
+def retrain_lora_async():
+    threading.Thread(target=train_lora_model_dynamic).start()
