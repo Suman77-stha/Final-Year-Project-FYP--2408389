@@ -37,7 +37,7 @@
         <ul class="menu">
             <li> <a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
             <li> <a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
-            <li><i class='bx bx-trending-up'></i> Trading</li>
+            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
             <li><i class='bx bxs-robot'></i> AI Assistant</li>
             <li><i class='bx bx-briefcase'></i> Portfolio</li>
             <li><i class='bx bx-refresh'></i> Swap</li>
@@ -109,7 +109,6 @@
                     {% endif %}
                 </div>
 
-                <div class="s_graph"></div>
             </div>
             {% endfor %}
         </div>
@@ -122,13 +121,14 @@
         <h3 id="chartTitle">Bitcoin Chart</h3>
         <div class="chart-buttons">
             <button class="active" data-range="7D">7D</button>
-            <button data-range="1W">1W</button>
+            <button data-range="2W">2W</button>
             <button data-range="7W">7W</button>
             <button data-range="1M">1M</button>
             <button data-range="5M">5M</button>
         </div>
     </div>
     <canvas id="lineChart" style="height:400px;"></canvas>
+    
 </div>
 
                 <!-- AI Prediction Section -->
