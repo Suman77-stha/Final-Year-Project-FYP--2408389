@@ -13,7 +13,9 @@ from django.utils import timezone
 from requests import request
 from decimal import Decimal
 from django.db.models.functions import TruncMonth
-from .APS.lstm_model import predict_stock_price
+from .APS.lstm_model import predict
+
+
 from .models import CustomUserCreationForm, New_Stock_Data, Watchlist, Transaction, Wallet, Portfolio
 from .APS.StockAPI import get_stock_data
 from django.core.cache import cache
@@ -104,8 +106,6 @@ def landing_page_view(request):
 def about_view(request):
     return render(request, 'About.html')
 
-def wallet_view(request):
-    return render(request, 'Wallet.html')
 def AI_Assistance_view(request):
     return render(request, 'AI_Assistance.html')
 
@@ -428,47 +428,38 @@ def get_live_price(request):
 
     return JsonResponse({"price": None})
 
+@login_required
 def stock_prediction_api(request):
-
-    symbol = request.GET.get("symbol", "TSLA")
+    symbol = request.GET.get("symbol", "AAPL")
     range_param = request.GET.get("range", "7D")
 
-    # Map UI ranges → days
-    range_map = {
-        "7D": 7,
-        "1W": 7,
-        "7W": 49,
-        "1M": 30,
-        "5M": 150,
-        "1Y": 365
-    }
-
+    range_map = {"7D": 7, "2W": 14, "7W": 49, "1M": 30, "5M": 150, "1Y": 365}
     period = range_map.get(range_param, 7)
 
-    result = predict_stock_price(symbol, period)
+    result = predict(symbol, period)
 
-    #  IMPORTANT CHANGE (dynamic history)
-    history_length = min(len(result["close_prices"]), 60)
+    # ---- Use real dates ----
+    today = datetime.date.today()
+    history_dates = [(today - datetime.timedelta(days=period - i)).strftime("%Y-%m-%d") 
+                     for i in range(len(result["close_prices"]))]
+    future_dates = [(today + datetime.timedelta(days=i+1)).strftime("%Y-%m-%d") 
+                    for i in range(len(result["future_days"]))]
 
-    close_prices = result["close_prices"][-history_length:]
-    future_prices = result["future_days"]
-
-    history_labels = [f"D{i}" for i in range(len(close_prices))]
-    future_labels = [f"F{i+1}" for i in range(len(future_prices))]
+    # Ensure last historical price = current_price
+    if result["close_prices"][-1] != result["current_price"]:
+        result["close_prices"][-1] = result["current_price"]
 
     data = {
         "symbol": symbol,
-        "history_labels": history_labels,
-        "future_labels": future_labels,
-        "close_prices": close_prices,
-        "future_prices": future_prices,
-        "accuracy": result["accuracy"],
+        "history_labels": history_dates,
+        "future_labels": future_dates,
+        "close_prices": result["close_prices"],
+        "future_days": result["future_days"],
+        "accuracy": result.get("accuracy", 0),
         "current_price": result["current_price"]
     }
 
     return JsonResponse(data)
-
-
 @login_required
 def profit_loss_api(request):
 
@@ -521,4 +512,128 @@ def stock_6month_api(request):
     return JsonResponse({
         "labels": labels,
         "data": prices
+    })
+# from django.http import JsonResponse
+# from FYP_APP.services.ai_engine import smart_ai
+
+# def chatbot(request):
+#     query = request.GET.get("q")
+
+#     response = smart_ai(query)
+
+#     return JsonResponse({"response": response})
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from decimal import Decimal
+import json
+from FYP_APP.models import Wallet, Portfolio, Transaction, New_Stock_Data
+
+@login_required
+def trading_bot_view(request):
+    wallet = Wallet.objects.get(user=request.user)
+    portfolio = Portfolio.objects.filter(user=request.user)
+    market = New_Stock_Data.objects.order_by('-nepal_dt')[:20]  # Latest 20 stocks
+
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = json.loads(request.body)
+        symbol = data.get('symbol').upper()
+        quantity = int(data.get('quantity'))
+        action = data.get('action').upper()
+        
+        # Optional signals for conditional buy
+        confidence = float(data.get('confidence_score', 0))
+        trend = data.get('trend', '').lower()
+        strength = data.get('strength', '').lower()
+        conflict = data.get('conflict', False)
+        reason = data.get('reason', '')
+
+        # Get latest stock price
+        stock = New_Stock_Data.objects.filter(symbol=symbol).order_by('-nepal_dt').first()
+        if not stock:
+            return JsonResponse({'message': 'Stock not found.'})
+        price = Decimal(stock.close_price)
+        total = price * quantity
+
+        message = ""
+
+        if action == 'BUY':
+            # Condition logic
+            if conflict:
+                return JsonResponse({'message': f'Cannot buy {symbol}: conflict detected.'})
+            if trend != 'bullish' or confidence < 35 or strength == 'weak':
+                return JsonResponse({'message': f'Condition not met for {symbol}. Reason: {reason}'})
+            if wallet.balance < total:
+                return JsonResponse({'message': 'Insufficient balance.'})
+
+            # Buy process
+            wallet.balance -= total
+            wallet.save()
+            portfolio_item, created = Portfolio.objects.get_or_create(
+                user=request.user,
+                symbol=symbol,
+                defaults={'quantity': quantity, 'avg_price': price}
+            )
+            if not created:
+                total_quantity = portfolio_item.quantity + quantity
+                portfolio_item.avg_price = ((portfolio_item.avg_price * portfolio_item.quantity) + total) / total_quantity
+                portfolio_item.quantity = total_quantity
+                portfolio_item.save()
+
+            Transaction.objects.create(
+                user=request.user,
+                symbol=symbol,
+                price=price,
+                quantity=quantity,
+                total=total,
+                transaction_type='BUY'
+            )
+            message = f"Bought {quantity} of {symbol} at ${price} | Reason: {reason}"
+
+        elif action == 'SELL':
+            try:
+                portfolio_item = Portfolio.objects.get(user=request.user, symbol=symbol)
+            except Portfolio.DoesNotExist:
+                return JsonResponse({'message': 'You do not own this stock.'})
+
+            if portfolio_item.quantity < quantity:
+                return JsonResponse({'message': 'Insufficient quantity to sell.'})
+
+            portfolio_item.quantity -= quantity
+            if portfolio_item.quantity == 0:
+                portfolio_item.delete()
+            else:
+                portfolio_item.save()
+
+            wallet.balance += total
+            wallet.save()
+
+            Transaction.objects.create(
+                user=request.user,
+                symbol=symbol,
+                price=price,
+                quantity=quantity,
+                total=total,
+                transaction_type='SELL'
+            )
+            message = f"Sold {quantity} of {symbol} at ${price}"
+
+        # Prepare updated portfolio HTML
+        portfolio_qs = Portfolio.objects.filter(user=request.user)
+        portfolio_html = ''.join([
+            f"<tr><td>{item.symbol}</td><td>{item.quantity}</td><td>{item.avg_price}</td></tr>"
+            for item in portfolio_qs
+        ])
+
+        return JsonResponse({
+            'message': message,
+            'wallet_balance': wallet.balance,
+            'portfolio_html': portfolio_html
+        })
+
+    # GET request → render dashboard
+    return render(request, 'trading_dashboard.html', {
+        'wallet': wallet,
+        'portfolio': portfolio,
+        'market': market
     })
