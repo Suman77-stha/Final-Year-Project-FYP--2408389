@@ -1,118 +1,10 @@
 
 /* ===============================
-HEADER
-=============================== */
-
-.header{
-    height:70px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 30px;
-    background:#0b0f0f;
-    border-bottom:1px solid #1c2a2a;
-}
-
-.header-left{
-    display:flex;
-    align-items:center;
-    gap:30px;
-}
-
-.logo{
-    font-size:22px;
-    font-weight:bold;
-    color:#1affc6;
-}
-
-/* SEARCH */
-.search-box{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    background:#151c1c;
-    padding:8px 15px;
-    border-radius:8px;
-    width:350px;
-    height:40px;
-    border:1px solid #1f2f2f;
-}
-
-.search-box input{
-    background:transparent;
-    border:none;
-    outline:none;
-    color:white;
-    width:100%;
-}
-
-.search-box input:-webkit-autofill{
-    -webkit-box-shadow:0 0 0 1000px #151c1c inset;
-    -webkit-text-fill-color:white;
-}
-
-.header-right{
-    display:flex;
-    align-items:center;
-    gap:20px;
-}
-
-.header-right i{
-    font-size:20px;
-    color:#1affc6;
-    cursor:pointer;
-    height:40px;
-    width:40px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-/* ===============================
 LAYOUT
 =============================== */
 
 .sub-container{
     display:flex;
-}
-
-/* ===============================
-SIDEBAR
-=============================== */
-
-.sidebar{
-    width:250px;
-    background:#0d1414;
-    height:calc(100vh - 70px);
-    padding:20px;
-    border-right:1px solid #1f2f2f;
-}
-
-.sidebar li a{
-    text-decoration:none;
-    color:inherit;
-    display:block;
-}
-
-.menu{
-    list-style:none;
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-}
-
-.menu li{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px;
-    border-radius:8px;
-    cursor:pointer;
-    transition:0.3s;
-}
-
-.menu li:hover{
-    background:#162020;
 }
 
 /* ===============================
@@ -143,7 +35,7 @@ FIRST SECTION
 
 .balance section{
     display:grid;
-    grid-template-columns:1fr 420px 1fr 300px;
+    grid-template-columns:1fr 420px 1fr 420px;
     gap:30px;
     align-items:center;
 }
@@ -262,54 +154,96 @@ DONUT CHART
 
 .Donut-Chart{
     background:#0d1414;
-    padding:25px;
+    padding:18px;
     border-radius:12px;
-    display:flex;
+    display:grid;
+    grid-template-columns:170px minmax(210px, 1fr);
     align-items:center;
-    justify-content:center;
-    gap:30px;
+    column-gap:22px;
+    width:100%;
+    min-height:210px;
 }
 
-.donut{
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    background:conic-gradient(
-        #22c55e 0% 60%,
-        #ef4444 60% 100%
-    );
+.donut-graph{
+    width:170px;
+    min-width:170px;
+    max-width:170px;
+    height:170px;
+    min-height:170px;
+    max-height:170px;
+    flex:0 0 170px;
     position:relative;
 }
 
-.donut::after{
-    content:"";
-    width:80px;
-    height:80px;
-    background:#0d1414;
-    border-radius:50%;
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
+.donut-graph canvas{
+    display:block;
+    width:170px !important;
+    height:170px !important;
 }
 
 /* DONUT LEGEND */
 
-.donut-symbol{
+.donut-legend-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:210px;
+    width:100%;
+    overflow:visible;
+}
+
+.legend-header{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 110px;
+    gap:12px;
+    font-size:12px;
+    color:#9ca3af;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    padding-bottom:4px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+}
+
+.legend-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 110px;
+    align-items:center;
+    gap:12px;
+}
+
+.legend-left{
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:10px;
+    min-width:0;
 }
 
-.donut-symbol .dot{
-    width:12px;
-    height:12px;
+.legend-dot{
+    width:10px;
+    height:10px;
     border-radius:50%;
-    background:#22c55e;
 }
 
-.symbol{
+.legend-symbol{
     font-size:14px;
+    color:#f3f4f6;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.legend-value{
+    font-size:14px;
+    color:#f3f4f6;
+    white-space:nowrap;
+    text-align:right;
+    font-variant-numeric: tabular-nums;
+    width:110px;
+}
+
+.legend-empty{
+    font-size:14px;
+    color:#9ca3af;
 }
 
 /* ===============================
@@ -341,6 +275,10 @@ SECOND SECTION
     background:#0d1414;
     padding:20px;
     border-radius:10px;
+}
+.chart-body{
+    height: 280px;
+    margin-top: 8px;
 }
 .chart-text{
     display:flex;
@@ -435,11 +373,6 @@ TABLET
 =============================== */
 
 @media (max-width:1024px){
-
-.sidebar{
-    width:200px;
-}
-
 .search-box{
     width:250px;
 }
@@ -454,6 +387,8 @@ TABLET
 
 .Donut-Chart{
     grid-column:span 2;
+    grid-template-columns:170px minmax(210px, 1fr);
+    align-items:center;
 }
 
 .second-section{
@@ -483,24 +418,21 @@ MOBILE
     flex-direction:column;
 }
 
-.sidebar{
-    width:100%;
-    height:auto;
-    border-right:none;
-    border-bottom:1px solid #1f2f2f;
-}
-
-.menu{
-    flex-direction:row;
-    overflow-x:auto;
-}
-
 .main{
     padding:15px;
 }
 
 .balance section{
     grid-template-columns:1fr;
+}
+
+.Donut-Chart{
+    grid-template-columns:1fr;
+    row-gap:14px;
+}
+
+.donut-graph{
+    margin:0 auto;
 }
 
 }
