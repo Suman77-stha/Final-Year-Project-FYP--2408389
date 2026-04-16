@@ -3,48 +3,38 @@
 {% load static %}
 {% block content %}
 <link rel="stylesheet" href="/static/CSS/Overview.css">
+<link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">
 <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="header">
     <div class="header-left">
-        <i class='bx bx-menu' id="menu-toggle"></i>
         <div class="logo">TradeVision AI</div>
-        <div>Hi Suman</div>
+        <div style="color: aquamarine;">Hi {% firstof request.user.first_name request.user.username "User" %}</div>
     </div>
-    <!-- SEARCH FORM -->
-    <form class="search" method="GET">
+    <form class="search header-search" method="GET" action="{% url 'dashboard' %}">
         <div class="search-box">
             <i class="bx bx-search"></i>
             <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
         </div>
-
         <datalist id="recentList">
             {% for s in recent_symbols %}
                 <option value="{{ s }}">
             {% endfor %}
         </datalist>
     </form>
-
-    <div class="header-right">
-        <i class="bx bx-bell"></i>
-        <i class="bx bxs-user"></i>
-    </div>
+    <nav class="header-nav">
+        <ul class="menu">
+            <li class="active"><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+            <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
+            <li><a href="{% url 'chatbot' %}"><i class='bx bxs-robot'></i> AI Assistant</a></li>
+            <li><a href="{% url 'settings' %}"><i class='bx bx-cog'></i> Settings</a></li>
+        </ul>
+    </nav>
 </div>
 
 <div class="sub-container">
-    <div class="sidebar">
-        <ul class="menu">
-            <li> <a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
-            <li> <a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
-            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
-            <li><i class='bx bxs-robot'></i> AI Assistant</li>
-            <li><i class='bx bx-briefcase'></i> Portfolio</li>
-            <li><i class='bx bx-refresh'></i> Swap</li>
-            <li><i class='bx bx-cog'></i> Settings</li>
-        </ul>
-    </div>
-
     <div class="main">
         <h3>Overview</h3>
         <div class="crypto-row">
@@ -68,7 +58,7 @@
                 <div>
                     <div class="price_sec">
                         {% if stock %}
-                            ${{ stock.close_price }}
+                            ${{ stock.close_price|floatformat:2 }}
                         {% else %}
                             NA
                         {% endif %}
@@ -76,33 +66,15 @@
 
                     {% if stock %}
                         {% if stock.change > 0 %}
-                        <span style="
-                            color: #08a241;
-                            width: 50px;
-                            height: 25px;
-                            border-radius: 15px;
-                            background-color: #3bffce;
-                            padding-left: 2px;
-                            padding-right: 2px;
-                            text-align: center;
-                            display: inline-block;">
-                            {{ stock.change }}
+                        <span class="trend-chip trend-chip-up">
+                            {{ stock.change|floatformat:2 }}
                         </span>
                         {% elif stock.change < 0 %}
-                        <span style="
-                            color: #bb0000;
-                            width: 50px;
-                            height: 25px;
-                            border-radius: 15px;
-                            background-color: #fa6576;
-                            padding-left: 2px;
-                            padding-right: 2px;
-                            text-align: center;
-                            display: inline-block;">
-                            {{ stock.change }}
+                        <span class="trend-chip trend-chip-down">
+                            {{ stock.change|floatformat:2 }}
                         </span>
                         {% else %}
-                        <span>{{ stock.change }}</span>
+                        <span>{{ stock.change|floatformat:2 }}</span>
                         {% endif %}
                     {% else %}
                         NA
@@ -164,18 +136,29 @@
                                         )
                                     </td>
                                     <td>{{ stock.volume }}</td>
-                                    <td>${{ stock.close_price }}</td>
+                                    <td>${{ stock.close_price|floatformat:2 }}</td>
                                     <td>
                                         {% if stock.change > 0 %}
-                                        <span style="color: #22c55e">{{ stock.change|floatformat:2 }}%</span>
+                                        <span class="trend-text trend-text-up">{{ stock.change|floatformat:2 }}%</span>
                                         {% elif stock.change < 0 %}
-                                        <span style="color: #ef4444">{{ stock.change|floatformat:2 }}%</span>
+                                        <span class="trend-text trend-text-down">{{ stock.change|floatformat:2 }}%</span>
                                         {% else %}
-                                        <span>{{ stock.change|floatformat:2 }}%</span>
+                                        <span class="trend-text trend-text-neutral">{{ stock.change|floatformat:2 }}%</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ stock.suggestion }}</td>
-                                    <td>{{ stock.accuracy }}%</td>
+                                    <!-- AI Suggestion -->
+                                    <td>
+                                        {% if stock.ai_action == "BUY" %}
+                                            <span class="ai-tag ai-tag-buy">BUY</span>
+                                        {% elif stock.ai_action == "SELL" %}
+                                            <span class="ai-tag ai-tag-sell">SELL</span>
+                                        {% else %}
+                                            <span class="ai-tag ai-tag-hold">HOLD</span>
+                                        {% endif %}
+                                    </td>
+
+    <!-- Confidence -->
+    <td>{{ stock.confidence_score }}%</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -239,31 +222,10 @@
                     </div>
                 </div>
 
-                <div class="amount">
-    <div>
-        <h4>Total Invested</h4>
-        <p>{{ total_invested }}</p>
-    </div>
-
-    <div>
-        <h4>Current Value</h4>
-        <p>{{ total_current }}</p>
-    </div>
-
-    <div>
-        <h4>Total Profit</h4>
-        {% if total_profit > 0 %}
-        <p style="color:#22c55e">{{ total_profit }} </p>
-        {% else %}
-         <p style="color:#ef4444">{{ total_profit }}</p>
-         {% endif %}
-            
-    </div>
-</div>
-
         <div class="ai-table-container">
     <table class="ai-table">
         <thead>
+            
             <tr>
                 <th>Symbol</th>
                 <th>Qty</th>
@@ -271,7 +233,6 @@
                 <th>Current</th>
                 <th>Invested</th>
                 <th>Value</th>
-                <th>Profit</th>
             </tr>
         </thead>
         <tbody>
@@ -279,15 +240,11 @@
             <tr>
                 <td>{{ p.symbol }}</td>
                 <td>{{ p.quantity }}</td>
-                <td>{{ p.avg_price }}</td>
-                <td>{{ p.current_price }}</td>
-                <td>{{ p.invested }}</td>
-                <td>{{ p.current_value }}</td>
-                {% if p.profit > 0 %}
-                <td style="color:#22c55e#ef4444">{{ p.profit }}</td>
-                {% else %}
-                <td style="color:#ef4444">{{ p.profit }}</td>
-                {% endif %}
+                <td>{{ p.avg_price|floatformat:2 }}</td>
+                <td>{{ p.current_price|floatformat:2 }}</td>
+                <td>{{ p.invested|floatformat:2 }}</td>
+                <td>{{ p.current_value|floatformat:2 }}</td>
+               
                     
                
             </tr>
