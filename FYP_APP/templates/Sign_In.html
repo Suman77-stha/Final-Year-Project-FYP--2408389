@@ -9,12 +9,20 @@
     <div class="left">
       <h1>Welcome!</h1>
       <h3>To Our New Website</h3>
-      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+      <p>This website is created for learning and practice purposes only. 
+All features, including buying and sharing, are not real and are just for demonstration.
+</p>
     </div>
 
     <!-- RIGHT SECTION -->
     <div class="right">
       <h2>Sign in</h2>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="text-danger">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
 
       <!-- GENERAL FORM ERRORS (invalid login) -->
       {% if form.non_field_errors %}
