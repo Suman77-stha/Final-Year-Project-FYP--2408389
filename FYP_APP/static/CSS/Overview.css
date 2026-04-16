@@ -1,108 +1,5 @@
-.header{
-    height:70px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 30px;
-    background:#0b0f0f;
-    border-bottom:1px solid #1c2a2a;
-}
-
-.header-left{
-    display:flex;
-    align-items:center;
-    gap:30px;
-}
-
-.logo{
-    font-size:22px;
-    font-weight:bold;
-    color:#1affc6;
-}
-
-.search-box{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    background:#151c1c;
-    padding:8px 15px;
-    border-radius:8px;
-    width:350px;
-    height:40px;
-    border:1px solid #1f2f2f;
-}
-
-.search-box input{
-    background: transparent !important;
-    border:none;
-    outline:none;
-    color:white;
-    width:100%;
-}
-
-/* remove browser autofill white background */
-.search-box input:-webkit-autofill{
-    -webkit-box-shadow: 0 0 0 1000px #151c1c inset !important;
-    -webkit-text-fill-color: white !important;
-}
-
-.header-right{
-    display:flex;
-    align-items:center;
-    gap:20px;
-}
-
-.header-right i{
-    font-size:20px;
-    color:#1affc6;
-    cursor:pointer;
-    height:40px;
-    width:40px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
 .sub-container{
     display:flex;
-}
-
-/* SIDEBAR */
-.sidebar{
-    width:250px;
-    background:#0d1414;
-    height:90vh;
-    padding:20px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    border-right:1px solid #1f2f2f;
-}
-.sidebar li a {
-    text-decoration: none;   /* removes underline */
-    color: inherit;          /* keeps same color as parent */
-    display: block;          /* makes the whole area clickable */
-}
-
-.menu{
-    list-style:none;
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-}
-
-.menu li{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px;
-    border-radius:8px;
-    cursor:pointer;
-    transition:0.3s;
-}
-
-.menu li:hover{
-    background:#162020;
 }
 
 /* MAIN */
@@ -155,17 +52,87 @@
     align-items: center;
 }
 .crypto-card div span{
-    width: 45px;
+    width: auto;
+    min-width: 62px;
     height: 22px;
     border-radius: 12px;
     background-color: #1affc6;
-    padding-left: 2px ;
-    padding-right: 2px ;
+    padding-left: 8px;
+    padding-right: 8px;
     text-align: center;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
+}
+.trend-chip{
+    min-width: 56px;
+    height: 24px;
+    border-radius: 999px;
+    padding: 0 8px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.trend-chip-up{
+    color:#0d8a59;
+    background:#9df7df;
+}
+
+.trend-chip-down{
+    color:#b12736;
+    background:#ffc3cc;
+}
+
+.trend-text{
+    font-weight: 600;
+}
+
+.trend-text-up{
+    color:#5ce09a;
+}
+
+.trend-text-down{
+    color:#ff8f9a;
+}
+
+.trend-text-neutral{
+    color:#d5e6ec;
+}
+
+.ai-tag{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:56px;
+    height:24px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    border:1px solid transparent;
+}
+
+.ai-tag-buy{
+    color:#b4f3d2;
+    background:rgba(16, 185, 129, 0.2);
+    border-color:rgba(16, 185, 129, 0.35);
+}
+
+.ai-tag-sell{
+    color:#ffd2d8;
+    background:rgba(239, 68, 68, 0.2);
+    border-color:rgba(239, 68, 68, 0.35);
+}
+
+.ai-tag-hold{
+    color:#c8d8de;
+    background:rgba(148, 163, 184, 0.18);
+    border-color:rgba(148, 163, 184, 0.3);
 }
 .crypto-card {
     transition: transform 0.2s ease;
@@ -265,15 +232,7 @@
     gap:20px;
 }
 
-/* CHART CARD */
-/* .chart{
-    height:100%;
-    background:#111818;
-    border-radius:15px;
-    padding:20px;
-    border:1px solid #1f2f2f;
-    width: 100%;
-} */
+
 .chart{
     width: 100%;
     height: 350px;     /* FIXED HEIGHT */
@@ -358,33 +317,6 @@ canvas{
     justify-content:space-between;
     font-size:13px;
 }
-.amount {
-    display: flex;
-    gap: 15px;
-    background: #111818;
-    padding: 15px;
-    border-radius: 12px;
-    justify-content: space-between;
-    border: 1px solid #1f2f2f;
-}
-
-.amount div {
-    flex: 1;
-    text-align: center;
-}
-
-.amount h4 {
-    font-size: 14px;
-    font-weight: 500;
-    color: #aaa;
-    margin-bottom: 5px;
-}
-
-.amount p {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1affc6;
-}
 .trade_buttons{
     display: flex;
     gap: 10px;
@@ -396,7 +328,6 @@ canvas{
     border-radius: 8px;
     border: 1px solid #1f2f2f;
     background: #151c1c;
-    /* color: white; */
     font-size: 14px;
     cursor: pointer;
 }
@@ -405,7 +336,6 @@ canvas{
     transition: margin 0.3s ease;
 }
 .buy_btn{
-    /* background: #1affc6; */
     color: #1affc6;
 }
 .buy_btn:hover{
@@ -413,7 +343,6 @@ canvas{
     color:white
 }
 .sell_btn{
-    /* background: #fa6576; */
     color: #fa6576;
 }
 .sell_btn:hover{
@@ -421,9 +350,7 @@ canvas{
     color: white;
 }
 
-/* ============================= */
-/* 📱 MOBILE RESPONSIVE DESIGN */
-/* ============================= */
+/*  MOBILE RESPONSIVE DESIGN */
 
 @media (max-width: 992px){
 
@@ -434,20 +361,6 @@ canvas{
 
     .search-box{
         width:200px;
-    }
-
-    /* Sidebar hide by default */
-    .sidebar{
-        position:fixed;
-        left:-260px;
-        top:70px;
-        height:calc(100vh - 70px);
-        transition:0.3s ease;
-        z-index:1000;
-    }
-
-    .sidebar.active{
-        left:0;
     }
 
     /* Make main full width */
@@ -476,9 +389,7 @@ canvas{
 }
 
 
-/* ============================= */
-/* 📱 SMALL MOBILE (phones) */
-/* ============================= */
+/*  SMALL MOBILE (phones) */
 
 @media (max-width: 600px){
 
@@ -501,8 +412,7 @@ canvas{
 
     /* Center right icons */
     .header-right{
-        width:100%;
-        justify-content:center;
+        justify-content:flex-end;
     }
 
     .header-right i{
@@ -530,7 +440,33 @@ canvas{
 
 }
 
+.amount {
+    display: flex;
+    gap: 15px;
+    background: #111818;
+    padding: 15px;
+    border-radius: 12px;
+    justify-content: space-between;
+    border: 1px solid #1f2f2f;
+}
 
+.amount div {
+    flex: 1;
+    text-align: center;
+}
+
+.amount h4 {
+    font-size: 14px;
+    font-weight: 500;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.amount p {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1affc6;
+}
 
 /* MODAL BACKGROUND */
 
@@ -546,9 +482,6 @@ canvas{
     align-items:center;
     z-index:1000;
 }
-
-
-
 /* MODAL BOX */
 
 .trade-box{
@@ -559,9 +492,6 @@ canvas{
     position:relative;
     box-shadow:0 0 30px rgba(0,0,0,0.6);
 }
-
-
-
 /* CLOSE BUTTON */
 
 .close-btn{
@@ -577,8 +507,6 @@ canvas{
     color:white;
 }
 
-
-
 /* TITLE */
 
 .trade-box h3{
@@ -586,17 +514,12 @@ canvas{
     color:white;
     font-size:20px;
 }
-
-
-
 /* FORM */
 
 .trade-box form{
     display:flex;
     flex-direction:column;
 }
-
-
 
 /* LABEL */
 
@@ -606,8 +529,6 @@ canvas{
     margin-top:10px;
     margin-bottom:5px;
 }
-
-
 
 /* INPUT */
 
