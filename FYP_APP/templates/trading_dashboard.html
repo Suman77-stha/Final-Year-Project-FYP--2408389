@@ -1,157 +1,204 @@
 {% extends "base.html" %}
-{% block title %} Trading Bot Dashboard {% endblock title%}
+{% block title %}Trading Dashboard{% endblock title %}
 {% block content %}
 {% load static %}
+<link rel="stylesheet" href="{% static 'CSS/trading_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">
 
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #0d0d0e; }
-        h1 { color: #333; }
-        .wallet { margin-bottom: 20px; font-size: 18px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #1d1010; padding: 8px; text-align: center; }
-        th { background-color: #0f0a0a; }
-        .trade-form { background: #1c1b1b; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-        .trade-form label { display: block; margin-top: 10px; }
-        .trade-form input, .trade-form select { width: 100%; padding: 6px; margin-top: 5px; }
-        .btn { background: #007bff; color: #1c1818; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 15px; }
-        .btn:hover { background: #0056b3; }
-        #message { margin-bottom: 20px; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <h1>Trading Dashboard</h1>
-    <div class="wallet">Wallet Balance: $<span id="wallet-balance">{{ wallet.balance }}</span></div>
-
-    <div id="message"></div>
-
-    <div class="trade-form">
-        <h2>Buy / Sell Stock</h2>
-        <label for="symbol">Symbol:</label>
-        <input type="text" id="symbol" placeholder="e.g. AAPL">
-
-        <label for="quantity">Quantity:</label>
-        <input type="number" id="quantity" min="1" value="1">
-
-        <label for="action">Action:</label>
-        <select id="action">
-            <option value="BUY">BUY</option>
-            <option value="SELL">SELL</option>
-        </select>
-
-        <h3>Conditional Buy Parameters (for BUY)</h3>
-        <label for="confidence">Confidence Score:</label>
-        <input type="number" id="confidence" min="0" max="100" value="38">
-
-        <label for="trend">Trend:</label>
-        <select id="trend">
-            <option value="Bullish">Bullish</option>
-            <option value="Bearish">Bearish</option>
-        </select>
-
-        <label for="strength">Strength:</label>
-        <select id="strength">
-            <option value="Weak">Weak</option>
-            <option value="Moderate">Moderate</option>
-            <option value="Strong">Strong</option>
-        </select>
-
-        <label>
-            <input type="checkbox" id="conflict"> Conflict Present
-        </label>
-
-        <label for="reason">Reason:</label>
-        <input type="text" id="reason" placeholder="Technical/market reason">
-
-        <button class="btn" onclick="submitTrade()">Execute Trade</button>
+<div class="td-shell">
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">TradeVision AI</div>
+            <div>Hi {% firstof request.user.first_name request.user.username "User" %}</div>
+        </div>
+        <nav class="header-nav">
+            <ul class="menu">
+                <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+                <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+                <li class="active"><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
+                <li><a href="{% url 'chatbot' %}"><i class='bx bxs-robot'></i> AI Assistant</a></li>
+                <li><a href="{% url 'settings' %}"><i class='bx bx-cog'></i> Settings</a></li>
+            </ul>
+        </nav>
     </div>
 
-    <h2>Portfolio</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Symbol</th>
-                <th>Quantity</th>
-                <th>Avg Price</th>
-            </tr>
-        </thead>
-        <tbody id="portfolio-body">
-            {% for item in portfolio %}
-            <tr>
-                <td>{{ item.symbol }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.avg_price }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="3">No stocks in portfolio</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <main class="td-main">
+            <div class="td-title-row">
+                <h1>Trading Dashboard</h1>
+                <div class="td-wallet">Wallet Balance: $<span id="wallet-balance">{{ wallet.balance }}</span></div>
+            </div>
 
-    <h2>Market Stocks (Latest 20)</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Symbol</th>
-                <th>Company</th>
-                <th>Close Price</th>
-                <th>Change</th>
-                <th>Volume</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for stock in market %}
-            <tr>
-                <td>{{ stock.symbol }}</td>
-                <td>{{ stock.CompanyName }}</td>
-                <td>{{ stock.close_price }}</td>
-                <td>{{ stock.change }}</td>
-                <td>{{ stock.volume }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            <div id="message" class="td-message" aria-live="polite"></div>
 
-    <script>
-        function submitTrade() {
-            const symbol = document.getElementById('symbol').value.trim();
-            const quantity = parseInt(document.getElementById('quantity').value);
-            const action = document.getElementById('action').value;
-            const confidence_score = parseFloat(document.getElementById('confidence').value);
-            const trend = document.getElementById('trend').value;
-            const strength = document.getElementById('strength').value;
-            const conflict = document.getElementById('conflict').checked;
-            const reason = document.getElementById('reason').value;
+            <section class="td-grid">
+                <div class="td-card td-form-card">
+                    <h2>Buy / Sell Stock</h2>
 
-            if (!symbol || quantity <= 0) {
-                alert("Please enter valid symbol and quantity");
-                return;
-            }
+                    <label for="symbol">Symbol</label>
+                    <input type="text" id="symbol" placeholder="e.g. AAPL">
 
-            const data = {
-                symbol, quantity, action,
-                confidence_score, trend, strength, conflict, reason
-            };
+                    <label for="quantity">Quantity</label>
+                    <input type="number" id="quantity" min="1" value="1">
 
-            fetch("{% url 'trading_bot' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('message').innerText = data.message;
-                document.getElementById('wallet-balance').innerText = data.wallet_balance;
+                    <label for="action">Action</label>
+                    <select id="action">
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                    </select>
 
-                // Update portfolio table
-                document.getElementById('portfolio-body').innerHTML = data.portfolio_html;
-            })
-            .catch(error => console.error("Error:", error));
+                    <h3>Conditional Buy Parameters (for BUY)</h3>
+
+                    <label for="confidence">Confidence Score</label>
+                    <input type="number" id="confidence" min="0" max="100" value="38">
+
+                    <label for="trend">Trend</label>
+                    <select id="trend">
+                        <option value="Bullish">Bullish</option>
+                        <option value="Bearish">Bearish</option>
+                    </select>
+
+                    <label for="strength">Strength</label>
+                    <select id="strength">
+                        <option value="Weak">Weak</option>
+                        <option value="Moderate">Moderate</option>
+                        <option value="Strong">Strong</option>
+                    </select>
+
+                    <label for="reason">Price</label>
+                    <input type="number" id="reason" placeholder="price" step="0.01">
+
+                    <button class="td-btn" onclick="submitTrade()">Execute Trade</button>
+                </div>
+
+                <div class="td-card td-table-card">
+                    <h2>Portfolio</h2>
+                    <div class="td-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Quantity</th>
+                                    <th>Avg Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolio-body">
+                                {% for item in portfolio %}
+                                <tr>
+                                    <td>{{ item.symbol }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.avg_price }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="td-empty">No stocks in portfolio</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="td-card td-table-card td-market-card">
+                    <h2>Market Stocks (Latest 20)</h2>
+                    <div class="td-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Company</th>
+                                    <th>Close Price</th>
+                                    <th>Change</th>
+                                    <th>Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stock in market %}
+                                <tr>
+                                    <td>{{ stock.symbol }}</td>
+                                    <td>{{ stock.CompanyName }}</td>
+                                    <td>{{ stock.close_price }}</td>
+                                    <td>{{ stock.change }}</td>
+                                    <td>{{ stock.volume }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+    </main>
+</div>
+
+<script>
+function getCookie(name) {
+    const cookies = document.cookie ? document.cookie.split(';') : [];
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + '=')) {
+            return decodeURIComponent(cookie.slice(name.length + 1));
         }
-    </script>
-</body>
+    }
+    return null;
+}
 
+function submitTrade() {
+    const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+    const quantity = parseInt(document.getElementById('quantity').value, 10);
+    const action = document.getElementById('action').value;
+    const confidence_score = parseFloat(document.getElementById('confidence').value);
+    const trend = document.getElementById('trend').value;
+    const strength = document.getElementById('strength').value;
+    const reason = document.getElementById('reason').value;
+
+    const messageEl = document.getElementById('message');
+    const portfolioBody = document.getElementById('portfolio-body');
+
+    if (!symbol || !quantity || quantity <= 0) {
+        messageEl.className = 'td-message error';
+        messageEl.textContent = 'Please enter a valid symbol and quantity.';
+        return;
+    }
+
+    const payload = {
+        symbol,
+        quantity,
+        action,
+        confidence_score,
+        trend,
+        strength,
+        conflict: false,
+        reason
+    };
+
+    fetch("{% url 'trading_bot' %}", {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken') || ''
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const text = data.message || 'Trade request processed.';
+        messageEl.className = text.toLowerCase().includes('bought') || text.toLowerCase().includes('sold')
+            ? 'td-message success'
+            : 'td-message error';
+        messageEl.textContent = text;
+
+        if (data.wallet_balance !== undefined) {
+            document.getElementById('wallet-balance').textContent = data.wallet_balance;
+        }
+
+        if (data.portfolio_html !== undefined) {
+            portfolioBody.innerHTML = data.portfolio_html || '<tr><td colspan="3" class="td-empty">No stocks in portfolio</td></tr>';
+        }
+    })
+    .catch(() => {
+        messageEl.className = 'td-message error';
+        messageEl.textContent = 'Trade failed. Please try again.';
+    });
+}
+</script>
+<form style="display:none;">{% csrf_token %}</form>
 {% endblock content %}
