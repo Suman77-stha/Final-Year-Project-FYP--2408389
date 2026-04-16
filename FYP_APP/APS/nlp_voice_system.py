@@ -21,15 +21,14 @@ if HF_TOKEN:
 
 # Now import Django models
 from FYP_APP.models import Portfolio, Transaction
-from django.contrib.auth.models import User
 
 from FYP_APP.APS.lstm_model import predict
 from FYP_APP.APS.API_Data import (
-    get_live_price,
     calculate_indicators,
     get_news_sentiment,
     decision_engine,
 )
+from FYP_APP.APS.StockAPI import get_stock_data
 
 # ===================== MEMORY =====================
 conversation_memory = []
@@ -95,11 +94,12 @@ def generate_llm_response(prompt):
         inputs,
         attention_mask=attention_mask,
         max_new_tokens=80,
-        temperature=0.7,
-        top_p=0.9,
+        temperature=0.6,
+        top_p=0.85,
         do_sample=True,
+        repetition_penalty=1.2,      
         pad_token_id=tokenizer.eos_token_id
-    )
+        )
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response.split("AI:")[-1].strip()
 
@@ -114,6 +114,14 @@ def extract_days(user_input):
     if "next week" in user_input:
         return 7
     if "next month" in user_input:
+        return 30
+    if "today" in user_input:
+        return 1
+    if "yesterday" in user_input:
+        return 2
+    if "week" in user_input:
+        return 7
+    if "month" in user_input:
         return 30
     return None
 
@@ -165,23 +173,72 @@ def extract_symbol(user_input):
 def get_user_transactions(user, days=5):
     try:
         since_date = timezone.now() - timedelta(days=days)
+
         transactions = Transaction.objects.filter(
             user=user,
-            created_at__gte=since_date
+            created_at__date__gte=since_date.date()
         ).order_by('-created_at')
+
         if not transactions.exists():
-            return "No recent transactions found."
-        result = f"Your last {days} days transactions:\n\n"
-        for t in transactions[:10]:  # limit to 10
+            return f"No transactions found in last {days} days."
+
+        result = f"\nLast {days} Days Transactions:\n"
+        result += "-" * 70 + "\n"
+        result += f"{'Type':<8}{'Symbol':<10}{'Qty':<8}{'Price':<12}{'Date':<12}\n"
+        result += "-" * 70 + "\n"
+
+        for t in transactions:
             result += (
-                f"{t.transaction_type} | {t.symbol} | "
-                f"Qty: {t.quantity} | Price: {t.price} | "
-                f"Date: {t.created_at.strftime('%Y-%m-%d')}\n"
+                f"{t.transaction_type.upper():<8}"
+                f"{t.symbol:<10}"
+                f"{t.quantity:<8}"
+                f"{float(t.price):<12.2f}"
+                f"{t.created_at.strftime('%Y-%m-%d')}\n"
             )
+
         return result
+
     except Exception as e:
         print("Transaction error:", e)
         return "Unable to fetch transaction history."
+
+def get_user_portfolio(user):
+    try:
+        portfolio = Portfolio.objects.filter(user=user)
+
+        if not portfolio.exists():
+            return "Your portfolio is empty."
+
+        result = "\nYour Portfolio:\n"
+        result += "-" * 60 + "\n"
+        result += f"{'Symbol':<10}{'Quantity':<12}{'Avg Price':<15}\n"
+        result += "-" * 60 + "\n"
+
+        for p in portfolio:
+            result += (
+                f"{p.symbol:<10}"
+                f"{p.quantity:<12}"
+                f"{float(p.avg_price):<15.2f}\n"
+            )
+
+        return result
+
+    except Exception as e:
+        print("Portfolio error:", e)
+        return "Unable to fetch portfolio."
+    
+def get_single_stock(user, symbol):
+    try:
+        stock = Portfolio.objects.filter(user=user, symbol=symbol).first()
+
+        if stock:
+            return f"You have {stock.quantity} shares of {symbol}."
+        else:
+            return f"You do not own {symbol}."
+
+    except Exception as e:
+        print("Stock error:", e)
+        return "Error fetching stock data."
 
 # ===================== CHATBOT LOGIC =====================
 def chatbot_logic(user_input, user=None):
@@ -227,7 +284,7 @@ def chatbot_logic(user_input, user=None):
         ""
     ]):
         try:
-            price_data = get_live_price(symbol)
+            price_data = get_stock_data(symbol)
             current_price = price_data.get('close_price')
             return f"The current price of {symbol} is {current_price}."
         except Exception as e:
@@ -239,7 +296,7 @@ def chatbot_logic(user_input, user=None):
         "transaction","transactions","transaction history","show my transactions","show my transaction history",
         "my trading history","my trades","recent transactions","recent trades","what did I buy","what did I sell",
         "my stock activity","trade history","trading activity","show my trades","latest transactions",
-        "recent stock activity","portfolio activity","recent stock activity","my trading summary","trading history"
+        "recent stock activity","recent stock activity","my trading summary","trading history"
     ]):
         if user is None:
             return "User not authenticated."
@@ -251,7 +308,7 @@ def chatbot_logic(user_input, user=None):
     # ===== BUY / ANALYSIS =====
     if symbol and any(x in user_input for x in ["should i buy", "what if buy", "buy or not", "is it good to buy"]):
         try:
-            price_data = get_live_price(symbol)
+            price_data = get_stock_data(symbol)
             indicators = calculate_indicators(symbol)
             news = get_news_sentiment(symbol)
             decision = decision_engine(price_data, indicators, news)
@@ -281,7 +338,7 @@ def chatbot_logic(user_input, user=None):
             if not exists:
                 return f"You do not own {symbol} in your portfolio."
 
-            price_data = get_live_price(symbol)
+            price_data = get_stock_data(symbol)
             indicators = calculate_indicators(symbol)
             news = get_news_sentiment(symbol)
             decision = decision_engine(price_data, indicators, news)
@@ -305,15 +362,28 @@ def chatbot_logic(user_input, user=None):
         except Exception as e:
             print("Sell error:", e)
             return "Unable to analyze selling decision."
-
+    
+    
     # ===== PORTFOLIO =====
-    if "portfolio" in user_input:
-        count = Portfolio.objects.count()
-        return f"You have {count} stocks in your portfolio."
-
-    # ===== DEFAULT LLM =====
+    # ===== PORTFOLIO =====
+    if any(x in user_input for x in ["portfolio","my portfolio","show my portfolio","what do I own","what stocks do I have","my holdings"]):
+        
+        if user is None:
+            return "User not authenticated."
+    
+        # 👉 If user is asking about specific stock
+        if any(x in user_input for x in ["how many", "quantity", "qty", "shares"]):
+            symbol = extract_symbol(user_input)
+    
+            if symbol:
+                return get_single_stock(user, symbol)
+    
+        # 👉 Otherwise show full portfolio
+        return get_user_portfolio(user)
+    
+        # ===== DEFAULT LLM =====
     return generate_llm_response(user_input)
-
+    
 # ===================== MAIN =====================
 if __name__ == "__main__":
     Speak("AI assistant started. How can I help you?")
@@ -334,6 +404,6 @@ if __name__ == "__main__":
             break
 
         response = chatbot_logic(query)
-        # Memory update removed
+        update_memory(query, response)
         print("AI:", response)
         Speak(response)
