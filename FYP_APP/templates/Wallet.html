@@ -1,54 +1,31 @@
 {% extends "base.html" %}
 {% block title %} Wallet {% endblock title %}
+{% load static %}
 
 {% block content %}
 <link rel="stylesheet" href="/static/CSS/wallet.css">
+<link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">
 
 <div class="header">
 
     <div class="header-left">
-        <i class='bx bx-menu' id="menu-toggle"></i>
         <div class="logo">TradeVision AI</div>
-        <div>Hi Suman</div>
+        <div>Hi {% firstof request.user.first_name request.user.username "User" %}</div>
     </div>
-
-    <!-- SEARCH FORM -->
-    <form class="search" method="GET">
-        <div class="search-box">
-            <i class="bx bx-search"></i>
-            <input type="text" name="symbol" placeholder="Search symbol..." list="recentList">
-        </div>
-
-        <datalist id="recentList">
-            {% for s in recent_symbols %}
-                <option value="{{ s }}">
-            {% endfor %}
-        </datalist>
-    </form>
-
-    <div class="header-right">
-        <i class="bx bx-bell"></i>
-        <i class="bx bxs-user"></i>
-    </div>
+    <nav class="header-nav">
+        <ul class="menu">
+            <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+            <li class="active"><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
+            <li><a href="{% url 'chatbot' %}"><i class='bx bxs-robot'></i> AI Assistant</a></li>
+            <li><a href="{% url 'settings' %}"><i class='bx bx-cog'></i> Settings</a></li>
+        </ul>
+    </nav>
 
 </div>
 
 
 <div class="sub-container">
-
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <ul class="menu">
-            <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
-            <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
-            <li><i class='bx bx-trending-up'></i> Trading</li>
-            <li><i class='bx bxs-robot'></i> AI Assistant</li>
-            <li><i class='bx bx-briefcase'></i> Portfolio</li>
-            <li><i class='bx bx-refresh'></i> Swap</li>
-            <li><i class='bx bx-cog'></i> Settings</li>
-        </ul>
-    </div>
-
     <!-- MAIN -->
     <div class="main">
 
@@ -148,21 +125,28 @@
 
                     </div>
                     <div class="Donut-Chart">
+                        <div class="donut-graph">
+                            <canvas id="walletDonutChart" width="170" height="170"></canvas>
+                        </div>
 
-                    <div class="donut-graph">
-                        <div class="donut"></div>
+                        <div class="donut-legend-list" id="walletDonutLegend">
+                            <div class="legend-header">
+                                <span>Symbol</span>
+                                <span>Price</span>
+                            </div>
+                            {% for item in donut_legend %}
+                            <div class="legend-row">
+                                <div class="legend-left">
+                                    <span class="legend-dot" style="background: {{ item.color }};"></span>
+                                    <span class="legend-symbol">{{ item.symbol }}</span>
+                                </div>
+                                <div class="legend-value">${{ item.value|floatformat:2 }}</div>
+                            </div>
+                            {% empty %}
+                            <div class="legend-empty">No buy portfolio data</div>
+                            {% endfor %}
+                        </div>
                     </div>
-                    
-                    <div class="donut-symbol">
-                        <span class="dot"></span>
-                        <div class="symbol">BTC</div>
-                    </div>
-
-                    <div class="Donut-profit-loss">
-                        <div class="price">+$50.000</div>
-                    </div>
-
-                </div>
                 </section>
             </div>
         </section>
@@ -178,20 +162,21 @@
                     <h4>Recent Activity</h4>
 
                     <div class="today-date">
-                        <i class="bx bx-calendar">March 2026</i>
-                        <i class="bx bx-chevron-down"></i>
+                        <i class="bx bx-calendar"></i>
+                        <span>{{ selected_date|date:"m/d/Y" }}</span>
                     </div>
 
                 </div>
                 <section class="left-activity-container">
-                <div class="date-group">22 Mar, 2022</div>
-                
+                {% for group in grouped_transactions %}
+                <div class="date-group">{{ group.date|date:"d M, Y" }}</div>
+
                 <table class="activity-table">
 
                     <tbody>
-                        {% for tx in recent_transactions %}
+                        {% for tx in group.items %}
                         <tr>
-                            <td class="icon">🏢</td>
+                            <td class="icon">c</td>
 
                             <td class="name">
                                 {{ tx.symbol }} <br>
@@ -218,13 +203,16 @@
 
                             <td class="quantity">{{ tx.quantity }}</td>
                             <td class="price">${{ tx.price|floatformat:3 }}</td>
-                            <td class="total">+${{ tx.total|floatformat:3 }}</td>
+                            <td class="total">{% if tx.transaction_type == "BUY" %}-{% else %}+{% endif %}${{ tx.total|floatformat:3 }}</td>
                         </tr>
                         {% endfor %}
 
                     </tbody>
 
                 </table>
+                {% empty %}
+                <div class="date-group">No transactions found.</div>
+                {% endfor %}
                 </section>
             </div>
 
@@ -238,21 +226,22 @@
 
                         <div class="chart-text">
                             <h3>last 7 days</h3>
-                            <h4>Recent activity</h4>
+                            <h4>User transaction trend</h4>
                         </div>
 
                         <div class="chart-buttons">
-                            <button class="active">1D</button>
-                            <button>7D</button>
+                            <button class="active">5D</button>
                             <button>1W</button>
-                            <button>7W</button>
+                            <button>3W</button>
                             <button>1M</button>
                             <button>5M</button>
                         </div>
 
                     </div>
 
-                    <div class="chart-body"></div>
+                    <div class="chart-body">
+                        <canvas id="wallet7DayChart"></canvas>
+                    </div>
 
                 </div>
 
@@ -263,5 +252,178 @@
     </div>
 
 </div>
+
+{{ chart_labels|json_script:"wallet-chart-labels" }}
+{{ chart_income|json_script:"wallet-chart-income" }}
+{{ chart_expense|json_script:"wallet-chart-expense" }}
+{{ chart_net|json_script:"wallet-chart-net" }}
+{{ donut_labels|json_script:"wallet-donut-labels" }}
+{{ donut_values|json_script:"wallet-donut-values" }}
+{{ donut_colors|json_script:"wallet-donut-colors" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let walletDonutChart = null;
+
+    function renderDonutLegend(legendItems) {
+        const legendRoot = document.getElementById("walletDonutLegend");
+        if (!legendRoot) return;
+
+        if (!legendItems || legendItems.length === 0) {
+            legendRoot.innerHTML =
+                '<div class="legend-header"><span>Symbol</span><span>Price</span></div>' +
+                '<div class="legend-empty">No buy portfolio data</div>';
+            return;
+        }
+
+        legendRoot.innerHTML =
+            '<div class="legend-header"><span>Symbol</span><span>Price</span></div>' +
+            legendItems.map(function (item) {
+            return (
+                '<div class="legend-row">' +
+                    '<div class="legend-left">' +
+                        '<span class="legend-dot" style="background:' + item.color + ';"></span>' +
+                        '<span class="legend-symbol">' + item.symbol + '</span>' +
+                    '</div>' +
+                    '<div class="legend-value">$' + Number(item.value).toFixed(2) + '</div>' +
+                '</div>'
+            );
+        }).join("");
+    }
+
+    function renderWalletDonut(payload) {
+        const donutCanvas = document.getElementById("walletDonutChart");
+        if (!donutCanvas || typeof Chart === "undefined") return;
+
+        const labels = payload.labels || [];
+        const values = payload.values || [];
+        const colors = payload.colors || [];
+        const hasData = values.length > 0;
+
+        renderDonutLegend(payload.legend || []);
+
+        if (walletDonutChart) walletDonutChart.destroy();
+        walletDonutChart = new Chart(donutCanvas, {
+            type: "doughnut",
+            data: {
+                labels: hasData ? labels : ["No Data"],
+                datasets: [{
+                    data: hasData ? values : [1],
+                    backgroundColor: hasData ? colors : ["#2A2A2A"],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1,
+                cutout: "72%",
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return context.label + ": $" + Number(context.parsed).toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function refreshWalletDonut() {
+        try {
+            const res = await fetch("/FYP/api/wallet-top5-donut/");
+            if (!res.ok) return;
+            const payload = await res.json();
+            renderWalletDonut(payload);
+        } catch (e) {
+            console.error("wallet donut refresh failed:", e);
+        }
+    }
+
+    renderWalletDonut({
+        labels: JSON.parse(document.getElementById("wallet-donut-labels").textContent),
+        values: JSON.parse(document.getElementById("wallet-donut-values").textContent),
+        colors: JSON.parse(document.getElementById("wallet-donut-colors").textContent),
+        legend: [
+            {% for item in donut_legend %}
+            {"symbol":"{{ item.symbol }}","value":{{ item.value }},"color":"{{ item.color }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        total: {{ donut_total|default:0 }}
+    });
+
+    refreshWalletDonut();
+
+    const canvas = document.getElementById("wallet7DayChart");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    const labels = JSON.parse(document.getElementById("wallet-chart-labels").textContent);
+    const income = JSON.parse(document.getElementById("wallet-chart-income").textContent);
+    const expense = JSON.parse(document.getElementById("wallet-chart-expense").textContent);
+    const net = JSON.parse(document.getElementById("wallet-chart-net").textContent);
+
+    new Chart(canvas, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Income",
+                    data: income,
+                    borderColor: "#22c55e",
+                    backgroundColor: "rgba(34, 197, 94, 0.18)",
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 2
+                },
+                {
+                    label: "Expense",
+                    data: expense,
+                    borderColor: "#ef4444",
+                    backgroundColor: "rgba(239, 68, 68, 0.14)",
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 2
+                },
+                {
+                    label: "Net",
+                    data: net,
+                    borderColor: "#00c896",
+                    backgroundColor: "rgba(0, 200, 150, 0.08)",
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 2,
+                    borderDash: [6, 4]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: "#d4d4d4" }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: "#a3a3a3" },
+                    grid: { color: "rgba(255,255,255,0.06)" }
+                },
+                y: {
+                    ticks: {
+                        color: "#a3a3a3",
+                        callback: function (v) { return "$" + v; }
+                    },
+                    grid: { color: "rgba(255,255,255,0.06)" }
+                }
+            }
+        }
+    });
+});
+</script>
 
 {% endblock content %}
