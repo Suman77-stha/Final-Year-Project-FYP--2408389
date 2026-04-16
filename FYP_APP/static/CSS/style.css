@@ -20,12 +20,11 @@
 .left {
   flex: 1;
   padding: 40px;
-  margin-top: 30px;
   text-align: center;
 }
 
 .left h1 {
-  font-size: 50px;
+  font-size: 40px;
   margin: 0;
   color: #4f5957;
 }
@@ -33,6 +32,11 @@
 .left h3 {
   margin-top: 10px;
   color: #464c4d;
+}
+.left p {
+  margin-top: 20px;
+  color: #2c2c2c;
+  font-size: 16px;
 }
 
 /* RIGHT PANEL */
@@ -119,8 +123,8 @@ input:focus {
   border: none;
   border-radius: 8px;
   margin: 20px auto;
-  background: #0d9488;
-  color: black;
+  background: #facc15;
+  color: #111111;
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
@@ -128,8 +132,9 @@ input:focus {
 }
 
 .btn:hover {
-  background: #14b8a6;
+  background: #fde047;
 }
+
 
 /* SIGNUP */
 .signup {
@@ -139,15 +144,15 @@ input:focus {
 /* Sign up Pages */
 /* LEFT SIDE BOXES */
 .box-container {
-  margin-top: 30px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 .box {
   background: rgba(255, 255, 255, 0.3);
-  padding: 15px 20px;
+  padding: 10px;
   border-radius: 10px;
   font-weight: bold;
   color: #1c1c1c;
