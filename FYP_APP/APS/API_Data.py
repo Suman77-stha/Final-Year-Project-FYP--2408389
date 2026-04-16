@@ -18,9 +18,9 @@ warnings.simplefilter(action='ignore', category=DeprecationWarning)
 # CONFIG
 # ==========================================
 SYMBOL = "AAPL"
-FINNHUB_API_KEY = "d5925c9r01qvj8ijk49gd5925c9r01qvj8ijk4a0"  # optional
+# FINNHUB_API_KEY = "d5925c9r01qvj8ijk49gd5925c9r01qvj8ijk4a0"  # optional
 NEWSAPI_KEY = "eeaa3ad47b384cb793bb0ca38185b181"
-stock_data_key = "RH1cObRmVBGqK0a9SmEBdJfs6LT5TsAEvxKbswCB"  # optional
+# stock_data_key = "RH1cObRmVBGqK0a9SmEBdJfs6LT5TsAEvxKbswCB"  # optional
 NEPAL_TZ = pytz.timezone("Asia/Kathmandu")
 CACHE_FILE = "cache.json"
 
@@ -49,48 +49,48 @@ def save_cache(symbol, data):
 # ==========================================
 # FETCH LIVE STOCK DATA
 # ==========================================
-def get_live_price(symbol):
-    try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
-        df = ticker.history(period="1d", interval="1m")
-        if df.empty:
-            return None
+# def get_stock_data(symbol):
+#     try:
+#         ticker = yf.Ticker(symbol)
+#         info = ticker.info
+#         df = ticker.history(period="1d", interval="1m")
+#         if df.empty:
+#             return None
 
-        last_row = df.iloc[-1]
-        prev_close = info.get("previousClose", last_row["Close"])
-        change = last_row["Close"] - prev_close
+#         last_row = df.iloc[-1]
+#         prev_close = info.get("previousClose", last_row["Close"])
+#         change = last_row["Close"] - prev_close
 
-        utc_dt = datetime.datetime.utcnow()
-        nepal_dt = utc_dt.astimezone(NEPAL_TZ)
-        if not symbol:
-            return None
+#         utc_dt = datetime.datetime.utcnow()
+#         nepal_dt = utc_dt.astimezone(NEPAL_TZ)
+#         if not symbol:
+#             return None
 
-        symbol = symbol.strip().upper()
+#         symbol = symbol.strip().upper()
 
-        url = "https://api.stockdata.org/v1/data/quote"
-        params = {"symbols": symbol, "api_token": stock_data_key}
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        result = response.json()
+#         url = "https://api.stockdata.org/v1/data/quote"
+#         params = {"symbols": symbol, "api_token": stock_data_key}
+#         response = requests.get(url, params=params, timeout=10)
+#         response.raise_for_status()
+#         result = response.json()
 
-        stock = result["data"][0]
-        stock_data = {
-            "symbol": symbol,
-            "CompanyName": info.get("shortName", symbol),
-            "Currency": info.get("currency", "USD"),
-            "nepal_dt": str(nepal_dt),
-            "utc_dt": str(utc_dt),
-            "open_price": stock.get("day_open", 0),
-            "high_price": stock.get("day_high", 0),
-            "low_price": stock.get("day_low", 0),
-            "close_price": stock.get("price", 0),
-            "volume": stock.get("volume", 0),
-            "change": float(change)
-        }
-        return stock_data
-    except:
-        return None
+#         stock = result["data"][0]
+#         stock_data = {
+#             "symbol": symbol,
+#             "CompanyName": info.get("shortName", symbol),
+#             "Currency": info.get("currency", "USD"),
+#             "nepal_dt": str(nepal_dt),
+#             "utc_dt": str(utc_dt),
+#             "open_price": stock.get("day_open", 0),
+#             "high_price": stock.get("day_high", 0),
+#             "low_price": stock.get("day_low", 0),
+#             "close_price": stock.get("price", 0),
+#             "volume": stock.get("volume", 0),
+#             "change": float(change)
+#         }
+#         return stock_data
+#     except:
+#         return None
 
 
 # ==========================================
@@ -245,27 +245,27 @@ def decision_engine(stock, indicators, sentiment):
     }
 
 
-# ==========================================
-# MAIN
-# ==========================================
-if __name__ == "__main__":
-    # Try cached data first
-    cached = load_cache(SYMBOL)
+# # ==========================================
+# # MAIN
+# # ==========================================
+# if __name__ == "__main__":
+#     # Try cached data first
+#     cached = load_cache(SYMBOL)
 
-    stock_data = get_live_price(SYMBOL) or (cached.get("stock_data") if cached else None)
-    indicators = calculate_indicators(SYMBOL) or (cached.get("indicators") if cached else None)
-    sentiment = get_news_sentiment(SYMBOL) or (cached.get("sentiment") if cached else None)
-    decision = decision_engine(stock_data, indicators, sentiment)
+#     stock_data = get_stock_data(SYMBOL) or (cached.get("stock_data") if cached else None)
+#     indicators = calculate_indicators(SYMBOL) or (cached.get("indicators") if cached else None)
+#     sentiment = get_news_sentiment(SYMBOL) or (cached.get("sentiment") if cached else None)
+#     decision = decision_engine(stock_data, indicators, sentiment)
 
-    result = {
-        "stock_data": stock_data,
-        "indicators": indicators,
-        "sentiment": sentiment,
-        "decision": decision
-    }
+#     result = {
+#         "stock_data": stock_data,
+#         "indicators": indicators,
+#         "sentiment": sentiment,
+#         "decision": decision
+#     }
 
-    # Save cache if new output differs
-    if cached != result:
-        save_cache(SYMBOL, result)
+#     # Save cache if new output differs
+#     if cached != result:
+#         save_cache(SYMBOL, result)
 
-    print(json.dumps(result, indent=4))
+#     print(json.dumps(result, indent=4))
