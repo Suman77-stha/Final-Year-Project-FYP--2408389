@@ -1,0 +1,421 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Stock Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Link to your static CSS file -->
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">
+
+    <style>
+         body {
+            
+            color: #ececec;
+    }
+        .sub-container{
+            display:flex;
+            justify-content:center;
+        }
+        
+        /* MAIN */
+        .main{
+            flex:1;
+            padding:25px;
+        }
+        .main h3{
+            font-size:18px;    
+            margin-bottom:10px;
+        }   
+        
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background-color: #212121;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #444;
+            border-radius: 8px;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            background-color: #2f2f2f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        .clear-btn {
+            color: #ff4b2b;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #2563eb;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background-color: #10a37f;
+            color: white;
+            border-bottom-left-radius: 4px;
+        }
+
+        .input-area {
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-container {
+            flex: 1;
+            background-color: #3c3c3c;
+            border-radius: 25px;
+            padding: 5px 15px;
+            display: flex; /* Added to keep input and mic aligned */
+            align-items: center;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 10px;
+            outline: none;
+        }
+
+        #mic-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 10px;
+            transition: color 0.2s;
+        }
+
+        #mic-btn:hover {
+            color: white;
+        }
+
+        #send-btn {
+            background-color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        
+        #send-btn:active {
+            transform: scale(0.9);
+        }
+
+        .chat-container {
+            background: rgba(8, 27, 35, 0.84);
+            border: 1px solid rgba(147, 199, 214, 0.24);
+            border-radius: 16px;
+            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(6px);
+            margin: 18px;
+        }
+
+        .chat-header {
+            background: rgba(6, 21, 29, 0.88);
+            border-bottom: 1px solid rgba(147, 199, 214, 0.24);
+        }
+
+        .clear-btn {
+            color: #8fc8d7;
+        }
+
+        .clear-btn:hover {
+            color: #d3eef5;
+        }
+
+        .chat-window {
+            background: linear-gradient(180deg, rgba(3, 13, 18, 0.45), rgba(3, 13, 18, 0));
+        }
+
+        .message {
+            border: 1px solid rgba(147, 199, 214, 0.22);
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #2f9fdc, #2d79cf);
+        }
+
+        .ai-message {
+            background: linear-gradient(135deg, #24b79b, #1f8aa8);
+        }
+
+        .input-container {
+            background: rgba(17, 43, 53, 0.78);
+            border: 1px solid rgba(147, 199, 214, 0.24);
+        }
+
+        #send-btn {
+            background: linear-gradient(135deg, #30d2b6, #2f9fdc);
+            color: #04212d;
+        }
+
+        #send-btn:hover {
+            filter: brightness(1.04);
+        }
+
+        @media (max-width: 900px) {
+            .sub-container {
+                flex-direction: column;
+            }
+
+            .chat-container {
+                margin: 12px;
+                max-width: 100%;
+                height: calc(100vh - 170px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+    <div class="header-left">
+        <div class="logo">TradeVision AI</div>
+        <div>Hi {% firstof request.user.first_name request.user.username "User" %}</div>
+    </div>
+    <nav class="header-nav">
+        <ul class="menu">
+            <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+            <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
+            <li class="active"><a href="{% url 'chatbot' %}"><i class='bx bxs-robot'></i> AI Assistant</a></li>
+            <li><a href="{% url 'settings' %}"><i class='bx bx-cog'></i> Settings</a></li>
+        </ul>
+    </nav>
+</div>
+
+<div class="sub-container">
+    <div class="chat-container">
+        <div class="chat-header">
+            <span><i class="fas fa-robot"></i> AI Stock Assistant</span>
+            <a href="{% url 'clear_chat' %}" class="clear-btn">Clear Chat</a>
+        </div>
+        
+        <div class="chat-window" id="chat-window">
+            <div class="message ai-message">
+                Hello! I am your AI stock assistant. How can I help you today?
+            </div>
+
+            {% for chat in chat_history %}
+                <div class="message user-message">{{ chat.user }}</div>
+                <div class="message ai-message">{{ chat.ai }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- FORM: Added ID chat-form for auto-submission if desired -->
+        <form method="POST" action="{% url 'chatbot' %}" class="input-area" id="chat-form">
+            {% csrf_token %}
+            <div class="input-container">
+                <!-- CRITICAL: Added id="message-input" to fix the JS error -->
+                <input type="text" name="message" id="message-input" placeholder="Ask me about stocks..." autocomplete="off" autofocus required>
+                
+                <button type="button" id="mic-btn" title="Click to Speak">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
+            <button type="submit" id="send-btn"><i class="fas fa-arrow-up"></i></button>
+        </form>
+    </div>
+</div>    
+
+<script>
+/* ==============================
+   GLOBAL VARIABLES
+============================== */
+const micBtn = document.getElementById('mic-btn');
+const messageInput = document.getElementById('message-input');
+const chatForm = document.getElementById('chat-form');
+const chatWindow = document.getElementById('chat-window');
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let recognition;
+let isListening = false;
+let continuousMode = true; // 🔥 keeps mic looping automatically
+
+/* ==============================
+   INITIALIZE SPEECH RECOGNITION
+============================== */
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false; // single phrase at a time
+    recognition.interimResults = false;
+
+    /* ===== START LISTENING ===== */
+    function startListening() {
+        try {
+            if (!isListening) {
+                recognition.start();
+                isListening = true;
+                micBtn.style.color = "#ff4b2b"; // red while listening
+            }
+        } catch (e) {
+            console.log("Speech recognition already started, retrying...");
+        }
+    }
+
+    /* ===== STOP LISTENING ===== */
+    function stopListening() {
+        recognition.stop();
+        isListening = false;
+        micBtn.style.color = "#aaa";
+    }
+
+    /* ===== CLICK MIC BUTTON ===== */
+    micBtn.addEventListener('click', () => {
+        if (!isListening) {
+            continuousMode = true;
+            startListening();
+        } else {
+            continuousMode = false;
+            stopListening();
+        }
+    });
+
+    /* ===== ON RESULT ===== */
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        messageInput.value = transcript;
+
+        // Auto-submit form
+        chatForm.submit();
+    };
+
+    /* ===== ON END ===== */
+    recognition.onend = () => {
+        isListening = false;
+        micBtn.style.color = "#aaa";
+
+        // Auto restart if continuous mode
+        if (continuousMode) {
+            setTimeout(() => {
+                startListening();
+            }, 1000); // small delay to let AI response appear
+        }
+    };
+
+    /* ===== ERROR HANDLER ===== */
+    recognition.onerror = (event) => {
+        console.log("Speech recognition error:", event.error);
+        isListening = false;
+        micBtn.style.color = "#aaa";
+
+        if (event.error === "no-speech") {
+            console.log("No speech detected, restarting...");
+            if (continuousMode) {
+                setTimeout(() => startListening(), 1000);
+            }
+        } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            alert("Microphone access denied. Please allow microphone to use voice.");
+            continuousMode = false;
+        } else if (event.error === "network") {
+            console.log("Network error in speech recognition.");
+        }
+    };
+
+} else {
+    micBtn.style.display = "none";
+    console.warn("Speech recognition not supported in this browser.");
+}
+
+/* ==============================
+   TEXT-TO-SPEECH FUNCTION
+============================== */
+function speakAI(text) {
+    if (!text) return;
+
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-US";
+    speech.rate = 1;
+    speech.pitch = 1;
+
+    window.speechSynthesis.speak(speech);
+}
+
+/* ==============================
+   AUTO SPEAK LAST AI RESPONSE
+============================== */
+function autoSpeakLastMessage() {
+    const messages = document.querySelectorAll(".ai-message");
+    if (messages.length > 0) {
+        const lastMessage = messages[messages.length - 1].innerText;
+        speakAI(lastMessage);
+    }
+}
+
+/* ==============================
+   SCROLL TO BOTTOM & AUTO SPEAK
+============================== */
+function scrollAndSpeak() {
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    autoSpeakLastMessage();
+}
+
+/* ==============================
+   AUTO START MIC ON PAGE LOAD
+============================== */
+window.onload = function() {
+    // Scroll & speak last AI message
+    scrollAndSpeak();
+
+    // Start mic automatically if desired
+    setTimeout(() => {
+        if (SpeechRecognition) {
+            startListening();
+        }
+    }, 2000);
+};
+
+/* ==============================
+   LISTEN TO NEW AI MESSAGES AFTER FORM SUBMIT
+============================== */
+const chatObserver = new MutationObserver(() => {
+    scrollAndSpeak();
+});
+
+chatObserver.observe(chatWindow, { childList: true });
+</script>
+</body>
+</html>
