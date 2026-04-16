@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %} Sign Up {% endblock title%}
 {% block content %}
+<link rel="stylesheet" href="/static/CSS/style.css">
 <div class="main_contain">
     <div class="container">
 
@@ -11,15 +12,32 @@
       <p>Join us to enjoy exclusive benefits and features.</p>
 
       <div class="box-container">
-        <div class="box">Step 1: Enter Details</div>
-        <div class="box">Step 2: Verify Email</div>
-        <div class="box">Step 3: Start Using</div>
-      </div>
+        <div class="box">
+          <h3>Trading Bot</h3>
+          <p>Automated trading system for learning and practice.</p>
+        </div>
+        <div class="box">
+          <h3>AI Assistance</h3>
+          <p>Smart AI support to guide your decisions.</p>
+        </div>
+        <div class="box">
+          <h3>Future Price Prediction</h3>
+          <p>Predict market trends using AI models.</p>
+        </div>
+</div>
     </div>
 
     <!-- RIGHT SECTION -->
     <div class="right">
       <h2>Sign Up</h2>
+      {% if messages %}
+        {% for message in messages %}
+          <div class="text-danger">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if error %}
+        <div class="text-danger">{{ error }}</div>
+      {% endif %}
       {% if form.non_field_errors %}
         {% for error in form.non_field_errors %}
           <div class="text-danger">{{ error }}</div>
@@ -31,7 +49,7 @@
 
         <!-- USERNAME -->
         <label for="{{ form.username.id_for_label }}"></label>
-        <input class="name" type="text" name="username" id="id_username"placeholder="Full name" value="{{ form.username.value }}" required />
+        <input class="name" type="text" name="username" id="id_username"placeholder="Username" value="{{ form.username.value }}" required />
 
         {% for error in form.username.errors %}
           <span class="text-danger">{{ error }}</span>
