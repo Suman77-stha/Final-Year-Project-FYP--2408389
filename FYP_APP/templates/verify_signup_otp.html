@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %} Verify OTP {% endblock title%}
+{% block content %}
+<div class="main_contain">
+  <div class="container">
+    <div class="left">
+      <h1>Email Verification</h1>
+      <h3>One More Step</h3>
+      <p>We sent a 6-digit OTP to <strong>{{ email }}</strong>. Enter it below to complete your sign up.</p>
+    </div>
+
+    <div class="right">
+      <h2>Verify OTP</h2>
+
+      {% if error %}
+        <div class="text-danger">{{ error }}</div>
+      {% endif %}
+      {% if success %}
+        <div class="text-success">{{ success }}</div>
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+        <input class="name" type="text" name="otp" maxlength="6" placeholder="Enter 6-digit OTP" required />
+        <button class="btn" type="submit">Verify OTP</button>
+      </form>
+
+      <form method="POST" style="margin-top: 10px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="resend">
+        <button class="btn" type="submit">Resend OTP</button>
+      </form>
+
+      <p class="signup">
+        Wrong email?
+        <a href="{% url 'Sign_Up' %}">Sign up again</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock content %}
