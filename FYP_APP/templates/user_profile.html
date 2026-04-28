@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}User Profile{% endblock title %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">
+<link rel="stylesheet" href="{% static 'CSS/profile.css' %}">
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo">TradeVision AI</div>
+        <div>Hi {% firstof request.user.first_name request.user.username "User" %}</div>
+    </div>
+    <nav class="header-nav">
+        <ul class="menu">
+            <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+            <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
+            <li><a href="{% url 'chatbot' %}"><i class='bx bxs-robot'></i> AI Assistant</a></li>
+            <li><a href="{% url 'settings' %}"><i class='bx bx-cog'></i> Settings</a></li>
+        </ul>
+    </nav>
+</div>
+
+<div class="sub-container">
+    <div class="main profile-main">
+        <h3>User Profile</h3>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="profile-message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="profile-grid">
+            <div class="profile-card">
+                <h4>Account Information</h4>
+                <form method="post" class="profile-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="profile">
+
+                    <label for="username">Username</label>
+                    <input id="username" name="username" type="text" value="{{ request.user.username }}" required>
+
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" value="{{ request.user.email }}" required>
+
+                    <label for="first_name">First Name</label>
+                    <input id="first_name" name="first_name" type="text" value="{{ request.user.first_name }}">
+
+                    <label for="last_name">Last Name</label>
+                    <input id="last_name" name="last_name" type="text" value="{{ request.user.last_name }}">
+
+                    <button type="submit">Save Profile</button>
+                </form>
+            </div>
+
+            <div class="profile-card stats-card">
+                <h4>Profile Summary</h4>
+                <div class="stats-list">
+                    <div class="stat-item">
+                        <span>Member Since</span>
+                        <strong>{{ joined_date|date:"d M Y" }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Current Holdings</span>
+                        <strong>{{ holdings_count }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Total Transactions</span>
+                        <strong>{{ transactions_count }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
