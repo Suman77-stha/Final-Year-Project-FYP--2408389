@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Settings{% endblock title %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">
+<link rel="stylesheet" href="{% static 'CSS/settings.css' %}">
+
+<div class="header">
+    <div class="header-left">
+        <div class="logo">TradeVision AI</div>
+        <div>Hi {% firstof request.user.first_name request.user.username "User" %}</div>
+    </div>
+    <nav class="header-nav">
+        <ul class="menu">
+            <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
+            <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
+            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
+            <li><a href="{% url 'chatbot' %}"><i class='bx bxs-robot'></i> AI Assistant</a></li>
+            <li class="active"><a href="{% url 'settings' %}"><i class='bx bx-cog'></i> Settings</a></li>
+        </ul>
+    </nav>
+</div>
+
+<div class="sub-container">
+    <div class="main settings-main">
+        <h3>Settings</h3>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="settings-message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="settings-grid">
+            <div class="settings-card">
+                <h4>Preferences</h4>
+                <form method="post" class="settings-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="preferences">
+
+                    <label class="switch-row">
+                        <span>Email Alerts</span>
+                        <input type="checkbox" name="email_alerts" {% if email_alerts %}checked{% endif %}>
+                    </label>
+
+                    <label class="switch-row">
+                        <span>Price Alerts</span>
+                        <input type="checkbox" name="price_alerts" {% if price_alerts %}checked{% endif %}>
+                    </label>
+
+                    <label class="switch-row">
+                        <span>AI Trading Tips</span>
+                        <input type="checkbox" name="ai_tips" {% if ai_tips %}checked{% endif %}>
+                    </label>
+
+                    <label for="theme">Theme</label>
+                    <select id="theme" name="theme">
+                        <option value="system" {% if theme == 'system' %}selected{% endif %}>System Default</option>
+                        <option value="light" {% if theme == 'light' %}selected{% endif %}>Light</option>
+                        <option value="dark" {% if theme == 'dark' %}selected{% endif %}>Dark</option>
+                    </select>
+
+                    <button type="submit">Save Preferences</button>
+                </form>
+            </div>
+
+            <div class="settings-card">
+                <h4>User Profile</h4>
+                <p>View and edit your profile information from one place.</p>
+                <a class="logout-btn" href="{% url 'profile' %}"><i class='bx bxs-user-detail'></i> Open Profile</a>
+            </div>
+
+            <div class="settings-card">
+                <h4>Security</h4>
+                <form method="post" class="settings-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="password">
+
+                    <label for="current_password">Current Password</label>
+                    <input id="current_password" name="current_password" type="password" required>
+
+                    <label for="new_password">New Password</label>
+                    <input id="new_password" name="new_password" type="password" required>
+
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input id="confirm_password" name="confirm_password" type="password" required>
+
+                    <button type="submit">Change Password</button>
+                </form>
+            </div>
+
+            <div class="settings-card logout-card">
+                <h4>Logout System</h4>
+                <p>End your current session securely.</p>
+                <a class="logout-btn" href="{% url 'logout' %}"><i class='bx bx-log-out'></i> Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
