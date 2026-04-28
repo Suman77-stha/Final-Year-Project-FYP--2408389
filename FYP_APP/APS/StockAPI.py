@@ -3,6 +3,7 @@ import os
 import pytz
 import requests
 import yfinance as yf
+api_key = "RH1cObRmVBGqK0a9SmEBdJfs6LT5TsAEvxKbswCB"
 
 try:
     from django.conf import settings
@@ -104,11 +105,11 @@ def get_stock_data(symbol):
     symbol = _normalize_symbol(symbol)
 
     url = "https://api.stockdata.org/v1/data/quote"
-    api_key = (
-        getattr(settings, "STOCKDATA_API_KEY", None)
-        if settings is not None
-        else None
-    ) or os.environ.get("STOCKDATA_API_KEY", "")
+    # api_key = (
+    #     getattr(settings, "STOCKDATA_API_KEY", None)
+    #     if settings is not None
+    #     else None
+    # ) or os.environ.get("STOCKDATA_API_KEY", "")
 
     params = {
         "symbols": symbol,
