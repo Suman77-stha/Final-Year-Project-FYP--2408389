@@ -5,5 +5,3 @@ class FypAppConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'FYP_APP'
 
-def ready(self):
-    import FYP_APP.signals
