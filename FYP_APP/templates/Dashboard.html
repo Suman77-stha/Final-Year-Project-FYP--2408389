@@ -19,8 +19,8 @@
         </div>
         <datalist id="recentList">
             {% for s in recent_symbols %}
-                <option value="{{ s }}">
-            {% endfor %}
+            <option value="{{ s }}">
+                {% endfor %}
         </datalist>
     </form>
     <nav class="header-nav">
@@ -42,15 +42,15 @@
             <div class="crypto-card">
                 <h5>
                     {% if stock %}
-                        {{ stock.CompanyName }}
+                    {{ stock.CompanyName }}
                     {% else %}
-                        NA
+                    NA
                     {% endif %}
                     (
                     {% if stock %}
-                        {{ stock.symbol }}
+                    {{ stock.symbol }}
                     {% else %}
-                        NA
+                    NA
                     {% endif %}
                     )
                 </h5>
@@ -58,27 +58,26 @@
                 <div>
                     <div class="price_sec">
                         {% if stock %}
-                            ${{ stock.close_price|floatformat:2 }}
+                        ${{ stock.close_price|floatformat:2 }}
                         {% else %}
-                            NA
+                        NA
                         {% endif %}
                     </div>
 
                     {% if stock %}
-                        {% if stock.change > 0 %}
-                        <span class="trend-chip trend-chip-up">
-                            {{ stock.change|floatformat:2 }}
-                        </span>
-                        {% elif stock.change < 0 %}
-                        <span class="trend-chip trend-chip-down">
-                            {{ stock.change|floatformat:2 }}
+                    {% if stock.change > 0 %}
+                    <span class="trend-chip trend-chip-up">
+                        {{ stock.change|floatformat:2 }}
+                    </span>
+                    {% elif stock.change < 0 %} <span class="trend-chip trend-chip-down">
+                        {{ stock.change|floatformat:2 }}
                         </span>
                         {% else %}
                         <span>{{ stock.change|floatformat:2 }}</span>
                         {% endif %}
-                    {% else %}
+                        {% else %}
                         NA
-                    {% endif %}
+                        {% endif %}
                 </div>
 
             </div>
@@ -89,19 +88,19 @@
 
             <div class="left-section">
                 <div class="chart">
-    <div class="chart-header">
-        <h3 id="chartTitle">Bitcoin Chart</h3>
-        <div class="chart-buttons">
-            <button class="active" data-range="7D">7D</button>
-            <button data-range="2W">2W</button>
-            <button data-range="7W">7W</button>
-            <button data-range="1M">1M</button>
-            <button data-range="5M">5M</button>
-        </div>
-    </div>
-    <canvas id="lineChart" style="height:400px;"></canvas>
-    
-</div>
+                    <div class="chart-header">
+                        <h3 id="chartTitle">Bitcoin Chart</h3>
+                        <div class="chart-buttons">
+                            <button class="active" data-range="7D">7D</button>
+                            <button data-range="2W">2W</button>
+                            <button data-range="7W">7W</button>
+                            <button data-range="1M">1M</button>
+                            <button data-range="5M">5M</button>
+                        </div>
+                    </div>
+                    <canvas id="lineChart" style="height:400px;"></canvas>
+
+                </div>
 
                 <!-- AI Prediction Section -->
                 <div class="chart">
@@ -120,18 +119,18 @@
                             </thead>
                             <tbody>
                                 {% for stock in Watchdata %}
-                                <tr>
+                                <tr id="ai-row-{{ stock.symbol }}">
                                     <td>
                                         {% if stock %}
-                                            {{ stock.CompanyName }}
+                                        {{ stock.CompanyName }}
                                         {% else %}
-                                            NA
+                                        NA
                                         {% endif %}
                                         (
                                         {% if stock %}
-                                            {{ stock.symbol }}
+                                        {{ stock.symbol }}
                                         {% else %}
-                                            NA
+                                        NA
                                         {% endif %}
                                         )
                                     </td>
@@ -141,24 +140,29 @@
                                         {% if stock.change > 0 %}
                                         <span class="trend-text trend-text-up">{{ stock.change|floatformat:2 }}%</span>
                                         {% elif stock.change < 0 %}
-                                        <span class="trend-text trend-text-down">{{ stock.change|floatformat:2 }}%</span>
+                                            <span class="trend-text trend-text-down">{{ stock.change|floatformat:2 }}%</span>
                                         {% else %}
-                                        <span class="trend-text trend-text-neutral">{{ stock.change|floatformat:2 }}%</span>
+                                            <span class="trend-text trend-text-neutral">{{ stock.change|floatformat:2 }}%</span>
                                         {% endif %}
                                     </td>
                                     <!-- AI Suggestion -->
-                                    <td>
+                                    <td class="ai-action-cell">
                                         {% if stock.ai_action == "BUY" %}
-                                            <span class="ai-tag ai-tag-buy">BUY</span>
+                                        <span class="ai-tag ai-tag-buy">BUY</span>
                                         {% elif stock.ai_action == "SELL" %}
-                                            <span class="ai-tag ai-tag-sell">SELL</span>
+                                        <span class="ai-tag ai-tag-sell">SELL</span>
+                                        {% elif stock.ai_action == "LOADING" %}
+                                        <span class="ai-tag"
+                                            style="background:var(--bg-lighter); color:var(--text-muted);"><i
+                                                class="fa fa-spinner fa-spin"></i>...</span>
                                         {% else %}
-                                            <span class="ai-tag ai-tag-hold">HOLD</span>
+                                        <span class="ai-tag ai-tag-hold">HOLD</span>
                                         {% endif %}
                                     </td>
 
-    <!-- Confidence -->
-    <td>{{ stock.confidence_score }}%</td>
+                                    <!-- Confidence -->
+                                    <td class="ai-confidence-cell">{% if stock.ai_action == "LOADING" %}...{% else %}{{
+                                        stock.confidence_score }}%{% endif %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -171,7 +175,7 @@
                 <section class="amount">
                     <div class="Opening_balance">
                         <h4>Opening Balance</h4>
-                        <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p> 
+                        <p id="opening_balance">${{ wallet.balance|floatformat:2 }}</p>
                     </div>
 
                     <div class="Today_investment">
@@ -184,7 +188,7 @@
                         <p id="closing_balance">${{ closing_balance|floatformat:2 }}</p>
                     </div>
                 </section>
-               <!-- BUY SELL BUTTONS -->
+                <!-- BUY SELL BUTTONS -->
                 <form class="buy-sell-form">
                     <div class="trade_buttons">
                         <button type="button" class="buy_btn" onclick="openTrade('buy')">BUY</button>
@@ -198,13 +202,13 @@
                         <span class="close-btn" onclick="closeTrade()"><i class="bx bx-x"></i></span>
                         <h3 id="tradeTitle">Trade</h3>
                         {% if messages %}
-                         <div class="trade_messages">
-                             {% for message in messages %}
-                             <div class="alert {{ message.tags }}">
-                                 {{ message }}
-                             </div>
-                             {% endfor %}
-                         </div>
+                        <div class="trade_messages">
+                            {% for message in messages %}
+                            <div class="alert {{ message.tags }}">
+                                {{ message }}
+                            </div>
+                            {% endfor %}
+                        </div>
                         {% endif %}
                         <form method="POST">
                             {% csrf_token %}
@@ -222,40 +226,73 @@
                     </div>
                 </div>
 
-        <div class="ai-table-container">
-    <table class="ai-table">
-        <thead>
-            
-            <tr>
-                <th>Symbol</th>
-                <th>Qty</th>
-                <th>Buy</th>
-                <th>Current</th>
-                <th>Invested</th>
-                <th>Value</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in portfolio_data %}
-            <tr>
-                <td>{{ p.symbol }}</td>
-                <td>{{ p.quantity }}</td>
-                <td>{{ p.avg_price|floatformat:2 }}</td>
-                <td>{{ p.current_price|floatformat:2 }}</td>
-                <td>{{ p.invested|floatformat:2 }}</td>
-                <td>{{ p.current_value|floatformat:2 }}</td>
-               
-                    
-               
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+                <div class="ai-table-container">
+                    <table class="ai-table">
+                        <thead>
+
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Qty</th>
+                                <th>Buy</th>
+                                <th>Current</th>
+                                <th>Invested</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in portfolio_data %}
+                            <tr>
+                                <td>{{ p.symbol }}</td>
+                                <td>{{ p.quantity }}</td>
+                                <td>{{ p.avg_price|floatformat:2 }}</td>
+                                <td>{{ p.current_price|floatformat:2 }}</td>
+                                <td>{{ p.invested|floatformat:2 }}</td>
+                                <td>{{ p.current_value|floatformat:2 }}</td>
+
+
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
     </div>
 </div>
-<script src="{% static 'JS/dashboard.js' %}"></script>
+<script src="{% static 'JS/dashboard.js' %}?v={% now 'U' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    fetch('/FYP/api/watchlist-ai/')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const predictions = data.data;
+                for (const sym in predictions) {
+                    const row = document.getElementById('ai-row-' + sym);
+                    if (row) {
+                        const aiData = predictions[sym];
+                        const actionCell = row.querySelector('.ai-action-cell');
+                        const confidenceCell = row.querySelector('.ai-confidence-cell');
+                        
+                        if (actionCell) {
+                            if (aiData.ai_action === "BUY") {
+                                actionCell.innerHTML = '<span class="ai-tag ai-tag-buy">BUY</span>';
+                            } else if (aiData.ai_action === "SELL") {
+                                actionCell.innerHTML = '<span class="ai-tag ai-tag-sell">SELL</span>';
+                            } else {
+                                actionCell.innerHTML = '<span class="ai-tag ai-tag-hold">HOLD</span>';
+                            }
+                        }
+                        if (confidenceCell) {
+                            confidenceCell.innerHTML = aiData.confidence_score + '%';
+                        }
+                    }
+                }
+            }
+        })
+        .catch(err => console.error('Error loading AI predictions:', err));
+});
+</script>
 {% endblock content %}

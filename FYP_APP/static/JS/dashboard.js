@@ -35,7 +35,13 @@ function formatDateLabels(historyLength, futureLength) {
 function loadMainChart(symbol, range = "7D") {
 
     const canvas = document.getElementById("lineChart");
+    const loader = document.getElementById("chartLoader");
     if (!canvas) return;
+
+    if (loader) {
+        loader.style.display = "flex";
+        canvas.style.display = "none";
+    }
 
     fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=${range}`)
         .then(res => res.json())
@@ -143,8 +149,19 @@ function loadMainChart(symbol, range = "7D") {
 
             const title = document.getElementById("chartTitle");
             if (title) title.innerText = symbol + " Price Prediction";
+
+            if (loader) {
+                loader.style.display = "none";
+                canvas.style.display = "block";
+            }
         })
-        .catch(err => console.error("Chart error:", err));
+        .catch(err => {
+            console.error("Chart error:", err);
+            const loader = document.getElementById("chartLoader");
+            const canvas = document.getElementById("lineChart");
+            if (loader) loader.style.display = "none";
+            if (canvas) canvas.style.display = "block";
+        });
 }
 
 
@@ -306,5 +323,36 @@ document.addEventListener("DOMContentLoaded", function () {
                 .catch(err => console.error(err));
         });
     }
+
+    // Fetch AI predictions for watchlist dynamically
+    fetch('/FYP/api/watchlist-ai/')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const predictions = data.data;
+                for (const sym in predictions) {
+                    const row = document.getElementById('ai-row-' + sym);
+                    if (row) {
+                        const aiData = predictions[sym];
+                        const actionCell = row.querySelector('.ai-action-cell');
+                        const confidenceCell = row.querySelector('.ai-confidence-cell');
+                        
+                        if (actionCell) {
+                            if (aiData.ai_action === "BUY") {
+                                actionCell.innerHTML = '<span class="ai-tag ai-tag-buy">BUY</span>';
+                            } else if (aiData.ai_action === "SELL") {
+                                actionCell.innerHTML = '<span class="ai-tag ai-tag-sell">SELL</span>';
+                            } else {
+                                actionCell.innerHTML = '<span class="ai-tag ai-tag-hold">HOLD</span>';
+                            }
+                        }
+                        if (confidenceCell) {
+                            confidenceCell.innerHTML = aiData.confidence_score + '%';
+                        }
+                    }
+                }
+            }
+        })
+        .catch(err => console.error('Error loading AI predictions:', err));
 
 });
