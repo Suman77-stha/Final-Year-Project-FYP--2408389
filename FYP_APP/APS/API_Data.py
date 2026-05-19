@@ -25,9 +25,7 @@ NEPAL_TZ = pytz.timezone("Asia/Kathmandu")
 CACHE_FILE = "cache.json"
 
 
-# ==========================================
 # HELPER: LOAD/WRITE CACHE
-# ==========================================
 def load_cache(symbol):
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, "r") as f:
@@ -245,27 +243,3 @@ def decision_engine(stock, indicators, sentiment):
     }
 
 
-# # ==========================================
-# # MAIN
-# # ==========================================
-# if __name__ == "__main__":
-#     # Try cached data first
-#     cached = load_cache(SYMBOL)
-
-#     stock_data = get_stock_data(SYMBOL) or (cached.get("stock_data") if cached else None)
-#     indicators = calculate_indicators(SYMBOL) or (cached.get("indicators") if cached else None)
-#     sentiment = get_news_sentiment(SYMBOL) or (cached.get("sentiment") if cached else None)
-#     decision = decision_engine(stock_data, indicators, sentiment)
-
-#     result = {
-#         "stock_data": stock_data,
-#         "indicators": indicators,
-#         "sentiment": sentiment,
-#         "decision": decision
-#     }
-
-#     # Save cache if new output differs
-#     if cached != result:
-#         save_cache(SYMBOL, result)
-
-#     print(json.dumps(result, indent=4))
