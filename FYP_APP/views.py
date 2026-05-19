@@ -16,6 +16,8 @@ from .models import CustomUserCreationForm, New_Stock_Data, Watchlist, Transacti
 import datetime
 import pytz
 import random
+import requests
+import numpy as np
 from django.db.models import Sum
 from collections import defaultdict
 
@@ -233,7 +235,7 @@ def AI_Assistance_view(request):
 
 @login_required(login_url='Sign_In')
 def dashboard_view(request):
-    from .APS.API_Data import calculate_indicators, get_news_sentiment, decision_engine
+    from .prediction.ai_suggestion import generate_ai_suggestion
     from .APS.StockAPI import get_stock_data
 
     # ---------------- SYMBOL & PERIOD ----------------
@@ -265,39 +267,19 @@ def dashboard_view(request):
 
     for item in watchlist_items:
 
-        try:
-            # ---------------- DATA FETCH ----------------
-            stock_info = get_stock_data(item.symbol)
-            indicators = calculate_indicators(item.symbol)
-            sentiment = get_news_sentiment(item.symbol)
-
-            # ---------------- AI ENGINE ----------------
-            ai_result = decision_engine(stock_info, indicators, sentiment)
-
-        except Exception:
-            # Fallback if any API fails
-            ai_result = {
-                "action": "HOLD",
-                "confidence_score": 0,
-                "trend": "Neutral",
-                "strength": "Weak",
-                "reason": "AI data unavailable"
-            }
-
-        # ---------------- FINAL OBJECT ----------------
         enhanced_watchdata.append({
-            "symbol": item.symbol,
+            "symbol": item.symbol.strip(),
             "CompanyName": item.CompanyName,
-            "close_price": float(item.close_price),
-            "change": float(item.change),
+            "close_price": float(item.close_price) if item.close_price else 0.0,
+            "change": float(item.change) if item.change else 0.0,
             "volume": item.volume,
 
             # AI OUTPUT
-            "ai_action": ai_result.get("action", "HOLD"),
-            "confidence_score": ai_result.get("confidence_score", 0),
-            "trend": ai_result.get("trend", "Neutral"),
-            "strength": ai_result.get("strength", "Weak"),
-            "reason": ai_result.get("reason", ""),
+            "ai_action": "LOADING",
+            "confidence_score": 0,
+            "trend": "Neutral",
+            "strength": "Weak",
+            "reason": "",
         })
 
     # Put searched symbol card first when it exists in watchlist cards.
@@ -735,8 +717,30 @@ def get_live_price(request):
     return JsonResponse({"price": None})
 
 @login_required
+def watchlist_ai_api(request):
+    from .prediction.ai_suggestion import generate_ai_suggestion
+    
+    watchlist_items = list(
+        Watchlist.objects.filter(user=request.user)
+        .order_by("-added_at")[:5]
+    )
+    
+    ai_predictions = {}
+    for item in watchlist_items:
+        sym = item.symbol.strip()
+        user_has_stock = Portfolio.objects.filter(user=request.user, symbol=sym, quantity__gt=0).exists()
+        ai_result = generate_ai_suggestion(sym, user_has_stock)
+        ai_predictions[sym] = {
+            "ai_action": ai_result.get("action", "HOLD"),
+            "confidence_score": ai_result.get("confidence_score", 0),
+            "trend": ai_result.get("trend", "Neutral")
+        }
+        
+    return JsonResponse({"status": "success", "data": ai_predictions})
+
+@login_required
 def stock_prediction_api(request):
-    from .APS.lstm_model import predict
+    from .prediction.predict_system import predict
 
     symbol = request.GET.get("symbol", "AAPL")
     range_param = request.GET.get("range", "7D")
@@ -748,7 +752,7 @@ def stock_prediction_api(request):
 
     # ---- Use real dates ----
     today = datetime.date.today()
-    history_dates = [(today - datetime.timedelta(days=period - i)).strftime("%Y-%m-%d") 
+    history_dates = [(today - datetime.timedelta(days=len(result["close_prices"]) - 1 - i)).strftime("%Y-%m-%d") 
                      for i in range(len(result["close_prices"]))]
     future_dates = [(today + datetime.timedelta(days=i+1)).strftime("%Y-%m-%d") 
                     for i in range(len(result["future_days"]))]
@@ -763,7 +767,7 @@ def stock_prediction_api(request):
         "future_labels": future_dates,
         "close_prices": result["close_prices"],
         "future_days": result["future_days"],
-        "accuracy": result.get("accuracy", 0),
+        "accuracy": round(100 - result.get("mape", 0), 2),
         "current_price": result["current_price"]
     }
 
@@ -821,6 +825,127 @@ def stock_6month_api(request):
         "labels": labels,
         "data": prices
     })
+
+
+def _sentiment_score_to_label(score):
+    if score >= 0.15:
+        return "Bullish"
+    if score <= -0.15:
+        return "Bearish"
+    return "Neutral"
+
+
+@login_required(login_url='Sign_In')
+def news_dashboard_view(request):
+    alpha_vantage_key = "KVUW4ESTNPBECL4Q"
+    nepal_tz = pytz.timezone("Asia/Kathmandu")
+    today_np = timezone.now().astimezone(nepal_tz).date()
+
+    query_symbol = request.GET.get("symbol", "AAPL").strip().upper()
+    tickers = request.GET.get("tickers", "AAPL,MSFT,TSLA,NVDA,GOOGL,AMZN,META").upper()
+
+    url = (
+        "https://www.alphavantage.co/query?"
+        "function=NEWS_SENTIMENT"
+        f"&tickers={tickers}"
+        "&limit=1000"
+        f"&apikey={alpha_vantage_key}"
+    )
+
+    feed = []
+    error_message = None
+    try:
+        resp = requests.get(url, timeout=20)
+        resp.raise_for_status()
+        payload = resp.json()
+        if "feed" in payload:
+            feed = payload.get("feed", [])
+        else:
+            error_message = payload.get("Note") or payload.get("Information") or "Unable to load news data."
+    except Exception as exc:
+        error_message = f"Failed to fetch news: {exc}"
+
+    today_news = []
+    symbol_rows = defaultdict(list)
+
+    for item in feed:
+        time_raw = item.get("time_published", "")
+        try:
+            dt_utc = datetime.datetime.strptime(time_raw, "%Y%m%dT%H%M%S").replace(tzinfo=pytz.UTC)
+            dt_np = dt_utc.astimezone(nepal_tz)
+        except Exception:
+            continue
+
+        if dt_np.date() != today_np:
+            continue
+
+        score = float(item.get("overall_sentiment_score", 0) or 0)
+        label = item.get("overall_sentiment_label", _sentiment_score_to_label(score))
+        tickers_info = item.get("ticker_sentiment", [])
+        ticker_symbols = [t.get("ticker", "").upper() for t in tickers_info if t.get("ticker")]
+
+        news_obj = {
+            "title": item.get("title", "Untitled"),
+            "summary": item.get("summary", ""),
+            "source": item.get("source", "Unknown"),
+            "url": item.get("url", "#"),
+            "published_np": dt_np.strftime("%Y-%m-%d %H:%M"),
+            "overall_score": score,
+            "overall_label": label,
+            "tickers": ticker_symbols,
+        }
+        today_news.append(news_obj)
+
+        for t in tickers_info:
+            sym = t.get("ticker", "").upper()
+            if not sym:
+                continue
+            try:
+                t_score = float(t.get("ticker_sentiment_score", 0) or 0)
+            except Exception:
+                t_score = 0.0
+            symbol_rows[sym].append(t_score)
+
+    today_news.sort(key=lambda x: x["published_np"], reverse=True)
+
+    symbol_sentiment = []
+    for sym, scores in sorted(symbol_rows.items()):
+        avg_score = float(np.mean(scores)) if scores else 0.0
+        symbol_sentiment.append({
+            "symbol": sym,
+            "articles": len(scores),
+            "avg_score": avg_score,
+            "label": _sentiment_score_to_label(avg_score),
+        })
+
+    filtered_news = [
+        n for n in today_news
+        if query_symbol in n["tickers"] or query_symbol == "ALL"
+    ]
+
+    overall_scores = [n["overall_score"] for n in today_news]
+    overall_avg = float(np.mean(overall_scores)) if overall_scores else 0.0
+    overall_summary = {
+        "articles": len(today_news),
+        "avg_score": overall_avg,
+        "label": _sentiment_score_to_label(overall_avg),
+    }
+
+    recent_symbols = Watchlist.objects.filter(
+        user=request.user
+    ).values_list("symbol", flat=True).distinct()[:10]
+
+    context = {
+        "today_date": today_np,
+        "query_symbol": query_symbol,
+        "tickers": tickers,
+        "overall_summary": overall_summary,
+        "symbol_sentiment": symbol_sentiment,
+        "news_items": filtered_news,
+        "error_message": error_message,
+        "recent_symbols": recent_symbols,
+    }
+    return render(request, "News.html", context)
 # from django.http import JsonResponse
 # from FYP_APP.services.ai_engine import smart_ai
 
