@@ -276,9 +276,11 @@ RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_VIEW = 'FYP.middleware.rate_limit.RateLimitMiddleware'
 
 # Logging Configuration
+# Logging Configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+
     'formatters': {
         'verbose': {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
@@ -289,69 +291,32 @@ LOGGING = {
             'style': '{',
         },
     },
-    # 'handlers': {
-    #     'file': {
-    #         'level': 'INFO',
-    #         'class': 'logging.FileHandler',
-    #         'filename': os.environ.get('LOG_FILE', BASE_DIR / 'logs' / 'django.log'),
-    #         'formatter': 'verbose',
-    #     },
-    #     'console': {
-    #         'level': 'INFO',
-    #         'class': 'logging.StreamHandler',
-    #         'formatter': 'simple',
-    #     },
-    #     'security': {
-    #         'level': 'WARNING',
-    #         'class': 'logging.FileHandler',
-    #         'filename': os.environ.get('SECURITY_LOG_FILE', BASE_DIR / 'logs' / 'security.log'),
-    #         'formatter': 'verbose',
-    #     },
-    # },
-    'handlers': {
-    'console': {
-        'level': 'INFO',
-        'class': 'logging.StreamHandler',
-        'formatter': 'simple',
-    },
-},
-'loggers': {
-    'django': {
-        'handlers': ['console'],
-        'level': 'INFO',
-        'propagate': True,
-    },
-    'django.security': {
-        'handlers': ['console'],
-        'level': 'WARNING',
-        'propagate': False,
-    },
-    'FYP': {
-        'handlers': ['console'],
-        'level': 'INFO',
-        'propagate': True,
-    },
-},
-#     'loggers': {
-#         'django': {
-#             'handlers': ['file', 'console'],
-#             'level': 'INFO',
-#             'propagate': True,
-#         },
-#         'django.security': {
-#             'handlers': ['security'],
-#             'level': 'WARNING',
-#             'propagate': False,
-#         },
-#         'FYP': {
-#             'handlers': ['file', 'console'],
-#             'level': 'INFO',
-#             'propagate': True,
-#         },
-#     },
-# }
 
-# Request Size Limits
-# DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
-# FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
-# DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+
+        'django.security': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+
+        'FYP': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
