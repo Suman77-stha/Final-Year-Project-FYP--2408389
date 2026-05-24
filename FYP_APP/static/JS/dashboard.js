@@ -4,6 +4,7 @@
 let mainChart;
 let miniCharts = {};
 let miniChartCache = {};
+let watchlistAiLoaded = false;
 
 
 // ===============================
@@ -32,6 +33,74 @@ function formatDateLabels(historyLength, futureLength) {
 // ===============================
 // MAIN CHART FUNCTION
 // ===============================
+
+// ===============================
+// MINI CHART FUNCTIONS
+// ===============================
+function createOrUpdateMiniChart(symbol, canvas) {
+    if (miniChartCache[symbol]) {
+        updateMiniChart(symbol, miniChartCache[symbol]);
+        return;
+    }
+    fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=7D`)
+        .then(res => res.json())
+        .then(data => {
+            const closePrices = data.close_prices || [];
+            const futurePrices = data.future_days || [];
+            const paddedFuture = [...new Array(closePrices.length).fill(null), ...futurePrices];
+            const labels = formatDateLabels(closePrices.length, futurePrices.length);
+            
+            const miniData = { labels, closePrices, paddedFuture };
+            miniChartCache[symbol] = miniData;
+            
+            if (miniCharts[symbol]) {
+                miniCharts[symbol].destroy();
+            }
+            miniCharts[symbol] = new Chart(canvas, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            data: closePrices,
+                            borderColor: "#00ffae",
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 0
+                        },
+                        {
+                            data: paddedFuture,
+                            borderColor: "#ff9800",
+                            borderWidth: 1.5,
+                            borderDash: [3, 3],
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false } },
+                    layout: { padding: 0 }
+                }
+            });
+        })
+        .catch(err => console.log("Mini chart fetch error:", err));
+}
+
+function updateMiniChart(symbol, miniData) {
+    if (miniCharts[symbol]) {
+        miniCharts[symbol].data.labels = miniData.labels;
+        miniCharts[symbol].data.datasets[0].data = miniData.closePrices;
+        miniCharts[symbol].data.datasets[1].data = miniData.paddedFuture;
+        miniCharts[symbol].update();
+    }
+}
+
 function loadMainChart(symbol, range = "7D") {
 
     const canvas = document.getElementById("lineChart");
@@ -293,66 +362,49 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // TRADE INPUT EVENTS
-    const priceInput = document.getElementById("trade_price");
-    const qtyInput = document.getElementById("trade_qty");
-
-    if (priceInput) priceInput.addEventListener("input", updateTotal);
-    if (qtyInput) qtyInput.addEventListener("input", updateTotal);
-
-    // AUTO PRICE FETCH
-    const symbolInput = document.getElementById("trade_symbol");
-
-    if (symbolInput) {
-        symbolInput.addEventListener("blur", function () {
-
-            const newSymbol = symbolInput.value.trim().toUpperCase();
-            if (!newSymbol) return;
-
-            fetch(`/FYP/get-live-price/?symbol=${newSymbol}`)
-                .then(res => res.json())
-                .then(data => {
-
-                    if (data.price !== null) {
-                        document.getElementById("trade_price").value = parseFloat(data.price).toFixed(2);
-                    }
-
-                    symbol = newSymbol;
-                    loadMainChart(symbol, "7D");
-
-                })
-                .catch(err => console.error(err));
+    const tradeSymbolInput = document.getElementById("trade_symbol");
+    if (tradeSymbolInput) {
+        tradeSymbolInput.addEventListener("blur", function () {
+            const newSymbol = tradeSymbolInput.value.trim().toUpperCase();
+            if (newSymbol) {
+                symbol = newSymbol;
+                loadMainChart(symbol, "7D");
+            }
         });
     }
 
     // Fetch AI predictions for watchlist dynamically
-    fetch('/FYP/api/watchlist-ai/')
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const predictions = data.data;
-                for (const sym in predictions) {
-                    const row = document.getElementById('ai-row-' + sym);
-                    if (row) {
-                        const aiData = predictions[sym];
-                        const actionCell = row.querySelector('.ai-action-cell');
-                        const confidenceCell = row.querySelector('.ai-confidence-cell');
-                        
-                        if (actionCell) {
-                            if (aiData.ai_action === "BUY") {
-                                actionCell.innerHTML = '<span class="ai-tag ai-tag-buy">BUY</span>';
-                            } else if (aiData.ai_action === "SELL") {
-                                actionCell.innerHTML = '<span class="ai-tag ai-tag-sell">SELL</span>';
-                            } else {
-                                actionCell.innerHTML = '<span class="ai-tag ai-tag-hold">HOLD</span>';
+    if (!watchlistAiLoaded) {
+        watchlistAiLoaded = true;
+        fetch('/FYP/api/watchlist-ai/')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const predictions = data.data;
+                    for (const sym in predictions) {
+                        const row = document.getElementById('ai-row-' + sym);
+                        if (row) {
+                            const aiData = predictions[sym];
+                            const actionCell = row.querySelector('.ai-action-cell');
+                            const confidenceCell = row.querySelector('.ai-confidence-cell');
+
+                            if (actionCell) {
+                                if (aiData.ai_action === "BUY") {
+                                    actionCell.innerHTML = '<span class="ai-tag ai-tag-buy">BUY</span>';
+                                } else if (aiData.ai_action === "SELL") {
+                                    actionCell.innerHTML = '<span class="ai-tag ai-tag-sell">SELL</span>';
+                                } else {
+                                    actionCell.innerHTML = '<span class="ai-tag ai-tag-hold">HOLD</span>';
+                                }
                             }
-                        }
-                        if (confidenceCell) {
-                            confidenceCell.innerHTML = aiData.confidence_score + '%';
+                            if (confidenceCell) {
+                                confidenceCell.innerHTML = aiData.confidence_score + '%';
+                            }
                         }
                     }
                 }
-            }
-        })
-        .catch(err => console.error('Error loading AI predictions:', err));
+            })
+            .catch(err => console.error('Error loading AI predictions:', err));
+    }
 
 });

@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+from django.urls import reverse
 from decimal import Decimal
 from django.db.models.functions import TruncMonth
 from .models import CustomUserCreationForm, New_Stock_Data, Watchlist, Transaction, Wallet, Portfolio
@@ -18,6 +19,7 @@ import pytz
 import random
 import requests
 import numpy as np
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from collections import defaultdict
 
@@ -28,7 +30,8 @@ def forgot_password(request):
         user = User.objects.filter(email__iexact=email).first()
 
         if user:
-            reset_link = f"http://127.0.0.1:8000/FYP/password-reset-confirm/{user.username}/"
+            reset_path = reverse("password_reset_confirm", kwargs={"user": user.username})
+            reset_link = request.build_absolute_uri(reset_path)
             try:
                 if not settings.DEFAULT_FROM_EMAIL or not settings.EMAIL_HOST_PASSWORD:
                     raise ValueError("Email SMTP credentials are not configured.")
@@ -198,11 +201,38 @@ def verify_signup_otp(request):
             request.session.pop(OTP_SESSION_KEY, None)
             return redirect('Sign_Up')
 
-        user = User.objects.create_user(
-            username=otp_data["username"],
-            email=otp_data["email"],
-            password=otp_data["password"],
-        )
+        try:
+            with transaction.atomic():
+                user, created = User.objects.get_or_create(
+                    username=otp_data["username"],
+                    defaults={
+                        "email": otp_data["email"],
+                    },
+                )
+                if not created:
+                    request.session.pop(OTP_SESSION_KEY, None)
+                    return render(
+                        request,
+                        'verify_signup_otp.html',
+                        {'email': otp_data["email"], 'error': 'Username already exists. Please sign up again.'}
+                    )
+                if User.objects.filter(email=otp_data["email"]).exclude(pk=user.pk).exists():
+                    request.session.pop(OTP_SESSION_KEY, None)
+                    return render(
+                        request,
+                        'verify_signup_otp.html',
+                        {'email': otp_data["email"], 'error': 'Email already exists. Please sign up again.'}
+                    )
+                user.set_password(otp_data["password"])
+                user.save(update_fields=["password", "email"])
+        except IntegrityError:
+            request.session.pop(OTP_SESSION_KEY, None)
+            return render(
+                request,
+                'verify_signup_otp.html',
+                {'email': otp_data["email"], 'error': 'Account already exists. Please sign in or retry.'}
+            )
+
         request.session.pop(OTP_SESSION_KEY, None)
         login(request, user)
         return redirect('dashboard')
@@ -225,9 +255,6 @@ def Sign_In_view(request):
 def landing_page_view(request):
     return render(request, 'Landing_page.html')
 
-def about_view(request):
-    return render(request, 'About.html')
-
 def AI_Assistance_view(request):
     return render(request, 'AI_Assistance.html')
 
@@ -235,7 +262,6 @@ def AI_Assistance_view(request):
 
 @login_required(login_url='Sign_In')
 def dashboard_view(request):
-    from .prediction.ai_suggestion import generate_ai_suggestion
     from .APS.StockAPI import get_stock_data
 
     # ---------------- SYMBOL & PERIOD ----------------
@@ -245,17 +271,29 @@ def dashboard_view(request):
     nepal_tz = pytz.timezone("Asia/Kathmandu")
     today = datetime.datetime.now(nepal_tz).date()
 
+    def get_cached_or_fetch_quote(symbol):
+        cached_qs = New_Stock_Data.objects.filter(symbol=symbol, nepal_dt=today).order_by("-utc_dt", "-id")
+        cached = cached_qs.first()
+        if cached:
+            # If historical duplicate rows exist, use the most recent row to keep dashboard stable.
+            return cached
+        api_data = get_stock_data(symbol)
+        if not api_data:
+            return None
+        existing_qs = New_Stock_Data.objects.filter(
+            symbol=api_data["symbol"],
+            nepal_dt=api_data["nepal_dt"],
+        ).order_by("-utc_dt", "-id")
+        existing = existing_qs.first()
+        if existing:
+            for field, value in api_data.items():
+                setattr(existing, field, value)
+            existing.save()
+            return existing
+        return New_Stock_Data.objects.create(**api_data)
+
     # ---------------- STOCK DATA ----------------
-    stock_data = New_Stock_Data.objects.filter(
-        symbol=search_symbol,
-        nepal_dt=today
-    ).first()
-
-    if not stock_data:
-        api_data = get_stock_data(search_symbol)
-
-        if api_data:
-            stock_data = New_Stock_Data.objects.create(**api_data)
+    stock_data = get_cached_or_fetch_quote(search_symbol)
 
     # ---------------- WATCHLIST ----------------
     watchlist_items = list(
@@ -407,8 +445,8 @@ def dashboard_view(request):
 
     for p in portfolio:
 
-        stock_info = get_stock_data(p.symbol)
-        current_price = Decimal(str(stock_info["close_price"])) if stock_info else Decimal("0")
+        stock_quote = get_cached_or_fetch_quote(p.symbol)
+        current_price = Decimal(str(stock_quote.close_price)) if stock_quote else Decimal("0")
 
         invested = p.avg_price * p.quantity
         current_value = current_price * p.quantity
@@ -653,15 +691,25 @@ def user_profile_view(request):
 @login_required(login_url='Sign_In')
 def settings_view(request):
     user = request.user
+    allowed_themes = {"system", "light", "dark", "midnight", "graphite"}
+
+    def as_bool(value):
+        return str(value).lower() in {"1", "true", "on", "yes"}
 
     if request.method == "POST":
         action = request.POST.get("action")
 
         if action == "preferences":
-            request.session["settings_email_alerts"] = request.POST.get("email_alerts") == "on"
-            request.session["settings_price_alerts"] = request.POST.get("price_alerts") == "on"
-            request.session["settings_ai_tips"] = request.POST.get("ai_tips") == "on"
-            request.session["settings_theme"] = request.POST.get("theme", "system")
+            request.session["settings_email_alerts"] = as_bool(request.POST.get("email_alerts"))
+            request.session["settings_price_alerts"] = as_bool(request.POST.get("price_alerts"))
+            request.session["settings_ai_tips"] = as_bool(request.POST.get("ai_tips"))
+
+            selected_theme = (request.POST.get("theme", "system") or "system").strip().lower()
+            if selected_theme not in allowed_themes:
+                selected_theme = "system"
+                messages.error(request, "Invalid theme selected. Reverted to System.")
+            request.session["settings_theme"] = selected_theme
+
             request.session.modified = True
             messages.success(request, "Settings saved successfully.")
             return redirect("settings")
@@ -716,6 +764,100 @@ def get_live_price(request):
 
     return JsonResponse({"price": None})
 
+
+def landing_market_snapshot_api(request):
+    from .APS.StockAPI import get_stock_data
+
+    def to_float(value, default=0.0):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    def pct_change(price, change):
+        prev = price - change
+        if prev == 0:
+            return 0.0
+        return (change / prev) * 100
+
+    def fetch_quote(symbol):
+        data = get_stock_data(symbol) or {}
+        price = to_float(data.get("close_price"), 0.0)
+        change = to_float(data.get("change"), 0.0)
+        return {
+            "symbol": (data.get("symbol") or symbol).upper(),
+            "price": price,
+            "change": change,
+            "change_pct": round(pct_change(price, change), 2),
+            "currency": data.get("Currency", "USD"),
+        }
+
+    quotes = {
+        "NASDAQ": fetch_quote("^IXIC"),
+        "S&P500": fetch_quote("^GSPC"),
+        "AAPL": fetch_quote("AAPL"),
+        "TSLA": fetch_quote("TSLA"),
+        "BTC": fetch_quote("BTC-USD"),
+        "MSFT": fetch_quote("MSFT"),
+        "NVDA": fetch_quote("NVDA"),
+    }
+
+    aapl = quotes["AAPL"]
+    tsla = quotes["TSLA"]
+    btc = quotes["BTC"]
+
+    prediction_trend = "Bullish" if aapl["change_pct"] > 0.2 else "Bearish" if aapl["change_pct"] < -0.2 else "Neutral"
+    confidence = int(max(55, min(94, 62 + abs(aapl["change_pct"]) * 6)))
+
+    signal = "BUY" if tsla["change_pct"] > 1 else "SELL" if tsla["change_pct"] < -1 else "HOLD"
+    risk_level = "High" if abs(tsla["change_pct"]) >= 2.5 else "Medium" if abs(tsla["change_pct"]) >= 1 else "Low"
+    signal_reason = (
+        "Momentum remains positive with improving day trend."
+        if signal == "BUY"
+        else "Downside pressure is increasing; protect capital."
+        if signal == "SELL"
+        else "Sideways movement detected; wait for stronger confirmation."
+    )
+
+    proxy_assets = [quotes["AAPL"], quotes["MSFT"], quotes["NVDA"], quotes["TSLA"], quotes["BTC"]]
+    total_value = round(sum(x["price"] for x in proxy_assets), 2)
+    avg_change = round(sum(x["change_pct"] for x in proxy_assets) / len(proxy_assets), 2) if proxy_assets else 0.0
+
+    return JsonResponse({
+        "ticker": [
+            {"label": "NASDAQ", **quotes["NASDAQ"]},
+            {"label": "S&P 500", **quotes["S&P500"]},
+            {"label": "AAPL", **quotes["AAPL"]},
+            {"label": "TSLA", **quotes["TSLA"]},
+            {"label": "BTC", **quotes["BTC"]},
+        ],
+        "cards": {
+            "live_market": {
+                "nasdaq": quotes["NASDAQ"],
+                "sp500": quotes["S&P500"],
+                "btc": quotes["BTC"],
+            },
+            "ai_prediction": {
+                "symbol": "AAPL",
+                "trend": prediction_trend,
+                "confidence": confidence,
+                "next_day_hint": round(aapl["price"] * (1 + (aapl["change_pct"] / 100) * 0.4), 2),
+            },
+            "recommendation": {
+                "symbol": "TSLA",
+                "signal": signal,
+                "risk_level": risk_level,
+                "reason": signal_reason,
+            },
+            "portfolio_proxy": {
+                "total_value": total_value,
+                "profit_pct": avg_change,
+                "active_assets": len(proxy_assets),
+            },
+        },
+        "updated_symbol_time": timezone.now().isoformat(),
+    })
+
 @login_required
 def watchlist_ai_api(request):
     from .prediction.ai_suggestion import generate_ai_suggestion
@@ -725,10 +867,15 @@ def watchlist_ai_api(request):
         .order_by("-added_at")[:5]
     )
     
+    owned_symbols = set(
+        Portfolio.objects.filter(user=request.user, quantity__gt=0)
+        .values_list("symbol", flat=True)
+    )
+
     ai_predictions = {}
     for item in watchlist_items:
         sym = item.symbol.strip()
-        user_has_stock = Portfolio.objects.filter(user=request.user, symbol=sym, quantity__gt=0).exists()
+        user_has_stock = sym in owned_symbols
         ai_result = generate_ai_suggestion(sym, user_has_stock)
         ai_predictions[sym] = {
             "ai_action": ai_result.get("action", "HOLD"),
@@ -758,14 +905,16 @@ def stock_prediction_api(request):
                     for i in range(len(result["future_days"]))]
 
     # Ensure last historical price = current_price
-    if result["close_prices"][-1] != result["current_price"]:
-        result["close_prices"][-1] = result["current_price"]
+    close_prices = result.get("close_prices") or []
+    if close_prices and result.get("current_price") is not None:
+        if close_prices[-1] != result["current_price"]:
+            close_prices[-1] = result["current_price"]
 
     data = {
         "symbol": symbol,
         "history_labels": history_dates,
         "future_labels": future_dates,
-        "close_prices": result["close_prices"],
+        "close_prices": close_prices,
         "future_days": result["future_days"],
         "accuracy": round(100 - result.get("mape", 0), 2),
         "current_price": result["current_price"]
@@ -827,125 +976,6 @@ def stock_6month_api(request):
     })
 
 
-def _sentiment_score_to_label(score):
-    if score >= 0.15:
-        return "Bullish"
-    if score <= -0.15:
-        return "Bearish"
-    return "Neutral"
-
-
-@login_required(login_url='Sign_In')
-def news_dashboard_view(request):
-    alpha_vantage_key = "KVUW4ESTNPBECL4Q"
-    nepal_tz = pytz.timezone("Asia/Kathmandu")
-    today_np = timezone.now().astimezone(nepal_tz).date()
-
-    query_symbol = request.GET.get("symbol", "AAPL").strip().upper()
-    tickers = request.GET.get("tickers", "AAPL,MSFT,TSLA,NVDA,GOOGL,AMZN,META").upper()
-
-    url = (
-        "https://www.alphavantage.co/query?"
-        "function=NEWS_SENTIMENT"
-        f"&tickers={tickers}"
-        "&limit=1000"
-        f"&apikey={alpha_vantage_key}"
-    )
-
-    feed = []
-    error_message = None
-    try:
-        resp = requests.get(url, timeout=20)
-        resp.raise_for_status()
-        payload = resp.json()
-        if "feed" in payload:
-            feed = payload.get("feed", [])
-        else:
-            error_message = payload.get("Note") or payload.get("Information") or "Unable to load news data."
-    except Exception as exc:
-        error_message = f"Failed to fetch news: {exc}"
-
-    today_news = []
-    symbol_rows = defaultdict(list)
-
-    for item in feed:
-        time_raw = item.get("time_published", "")
-        try:
-            dt_utc = datetime.datetime.strptime(time_raw, "%Y%m%dT%H%M%S").replace(tzinfo=pytz.UTC)
-            dt_np = dt_utc.astimezone(nepal_tz)
-        except Exception:
-            continue
-
-        if dt_np.date() != today_np:
-            continue
-
-        score = float(item.get("overall_sentiment_score", 0) or 0)
-        label = item.get("overall_sentiment_label", _sentiment_score_to_label(score))
-        tickers_info = item.get("ticker_sentiment", [])
-        ticker_symbols = [t.get("ticker", "").upper() for t in tickers_info if t.get("ticker")]
-
-        news_obj = {
-            "title": item.get("title", "Untitled"),
-            "summary": item.get("summary", ""),
-            "source": item.get("source", "Unknown"),
-            "url": item.get("url", "#"),
-            "published_np": dt_np.strftime("%Y-%m-%d %H:%M"),
-            "overall_score": score,
-            "overall_label": label,
-            "tickers": ticker_symbols,
-        }
-        today_news.append(news_obj)
-
-        for t in tickers_info:
-            sym = t.get("ticker", "").upper()
-            if not sym:
-                continue
-            try:
-                t_score = float(t.get("ticker_sentiment_score", 0) or 0)
-            except Exception:
-                t_score = 0.0
-            symbol_rows[sym].append(t_score)
-
-    today_news.sort(key=lambda x: x["published_np"], reverse=True)
-
-    symbol_sentiment = []
-    for sym, scores in sorted(symbol_rows.items()):
-        avg_score = float(np.mean(scores)) if scores else 0.0
-        symbol_sentiment.append({
-            "symbol": sym,
-            "articles": len(scores),
-            "avg_score": avg_score,
-            "label": _sentiment_score_to_label(avg_score),
-        })
-
-    filtered_news = [
-        n for n in today_news
-        if query_symbol in n["tickers"] or query_symbol == "ALL"
-    ]
-
-    overall_scores = [n["overall_score"] for n in today_news]
-    overall_avg = float(np.mean(overall_scores)) if overall_scores else 0.0
-    overall_summary = {
-        "articles": len(today_news),
-        "avg_score": overall_avg,
-        "label": _sentiment_score_to_label(overall_avg),
-    }
-
-    recent_symbols = Watchlist.objects.filter(
-        user=request.user
-    ).values_list("symbol", flat=True).distinct()[:10]
-
-    context = {
-        "today_date": today_np,
-        "query_symbol": query_symbol,
-        "tickers": tickers,
-        "overall_summary": overall_summary,
-        "symbol_sentiment": symbol_sentiment,
-        "news_items": filtered_news,
-        "error_message": error_message,
-        "recent_symbols": recent_symbols,
-    }
-    return render(request, "News.html", context)
 # from django.http import JsonResponse
 # from FYP_APP.services.ai_engine import smart_ai
 
@@ -962,114 +992,6 @@ from decimal import Decimal
 import json
 from FYP_APP.models import Wallet, Portfolio, Transaction, New_Stock_Data
 
-@login_required
-def trading_bot_view(request):
-    wallet = Wallet.objects.get(user=request.user)
-    portfolio = Portfolio.objects.filter(user=request.user)
-    market = New_Stock_Data.objects.order_by('-nepal_dt')[:20]  # Latest 20 stocks
-
-    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        data = json.loads(request.body)
-        symbol = data.get('symbol').upper()
-        quantity = int(data.get('quantity'))
-        action = data.get('action').upper()
-        
-        # Optional signals for conditional buy
-        confidence = float(data.get('confidence_score', 0))
-        trend = data.get('trend', '').lower()
-        strength = data.get('strength', '').lower()
-        conflict = data.get('conflict', False)
-        reason = data.get('reason', '')
-
-        # Get latest stock price
-        stock = New_Stock_Data.objects.filter(symbol=symbol).order_by('-nepal_dt').first()
-        if not stock:
-            return JsonResponse({'message': 'Stock not found.'})
-        price = Decimal(stock.close_price)
-        total = price * quantity
-
-        message = ""
-
-        if action == 'BUY':
-            # Condition logic
-            if conflict:
-                return JsonResponse({'message': f'Cannot buy {symbol}: conflict detected.'})
-            if trend != 'bullish' or confidence < 35 or strength == 'weak':
-                return JsonResponse({'message': f'Condition not met for {symbol}. Reason: {reason}'})
-            if wallet.balance < total:
-                return JsonResponse({'message': 'Insufficient balance.'})
-
-            # Buy process
-            wallet.balance -= total
-            wallet.save()
-            portfolio_item, created = Portfolio.objects.get_or_create(
-                user=request.user,
-                symbol=symbol,
-                defaults={'quantity': quantity, 'avg_price': price}
-            )
-            if not created:
-                total_quantity = portfolio_item.quantity + quantity
-                portfolio_item.avg_price = ((portfolio_item.avg_price * portfolio_item.quantity) + total) / total_quantity
-                portfolio_item.quantity = total_quantity
-                portfolio_item.save()
-
-            Transaction.objects.create(
-                user=request.user,
-                symbol=symbol,
-                price=price,
-                quantity=quantity,
-                total=total,
-                transaction_type='BUY'
-            )
-            message = f"Bought {quantity} of {symbol} at ${price} | Reason: {reason}"
-
-        elif action == 'SELL':
-            try:
-                portfolio_item = Portfolio.objects.get(user=request.user, symbol=symbol)
-            except Portfolio.DoesNotExist:
-                return JsonResponse({'message': 'You do not own this stock.'})
-
-            if portfolio_item.quantity < quantity:
-                return JsonResponse({'message': 'Insufficient quantity to sell.'})
-
-            portfolio_item.quantity -= quantity
-            if portfolio_item.quantity == 0:
-                portfolio_item.delete()
-            else:
-                portfolio_item.save()
-
-            wallet.balance += total
-            wallet.save()
-
-            Transaction.objects.create(
-                user=request.user,
-                symbol=symbol,
-                price=price,
-                quantity=quantity,
-                total=total,
-                transaction_type='SELL'
-            )
-            message = f"Sold {quantity} of {symbol} at ${price}"
-
-        # Prepare updated portfolio HTML
-        portfolio_qs = Portfolio.objects.filter(user=request.user)
-        portfolio_html = ''.join([
-            f"<tr><td>{item.symbol}</td><td>{item.quantity}</td><td>{item.avg_price}</td></tr>"
-            for item in portfolio_qs
-        ])
-
-        return JsonResponse({
-            'message': message,
-            'wallet_balance': wallet.balance,
-            'portfolio_html': portfolio_html
-        })
-
-    # GET request → render dashboard
-    return render(request, 'trading_dashboard.html', {
-        'wallet': wallet,
-        'portfolio': portfolio,
-        'market': market
-    })
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
@@ -1080,13 +1002,20 @@ def Ai_Assistance_view(request):
     # Initialize chat history in session if not present
     if 'chat_history' not in request.session:
         request.session['chat_history'] = []
+    if 'chatbot_memory_state' not in request.session:
+        request.session['chatbot_memory_state'] = {}
 
     if request.method == "POST":
         user_input = request.POST.get("message", "").strip()
         
         if user_input:
-            # Call your existing logic from the APS folder
-            ai_response = chatbot_logic(user_input, user=request.user)
+            # Call chatbot with persisted memory state for contextual follow-ups.
+            ai_response, new_memory_state = chatbot_logic(
+                user_input,
+                user=request.user,
+                memory_state=request.session.get('chatbot_memory_state', {}),
+                return_state=True
+            )
 
             # Update the session history
             history = request.session['chat_history']
@@ -1100,6 +1029,7 @@ def Ai_Assistance_view(request):
                 history.pop(0)
                 
             request.session['chat_history'] = history
+            request.session['chatbot_memory_state'] = new_memory_state
             request.session.modified = True
             
             # Redirect to the same page to prevent "Form Resubmission" on refresh
@@ -1112,4 +1042,6 @@ def Ai_Assistance_view(request):
 def clear_chat(request):
     if 'chat_history' in request.session:
         del request.session['chat_history']
+    if 'chatbot_memory_state' in request.session:
+        del request.session['chatbot_memory_state']
     return redirect('chatbot')

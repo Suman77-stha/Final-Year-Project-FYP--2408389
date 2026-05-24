@@ -1,7 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %} Sign In {% endblock title%}
 {% block content %}
-<link rel="stylesheet" href="/static/CSS/style.css">
+<link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+<header class="navbar">
+    <div class="logo">TradeVision AI</div>
+    <div id="menu-icon">&#9776;</div>
+    <ul class="nav-links">
+        <li><a href="{% url 'Home' %}">Home</a></li>
+        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="active"><a href="{% url 'Sign_In' %}">Sign In</a></li>
+
+    </ul>
+</header>
 <div class="main_contain">
    <div class="container">
 
@@ -38,7 +49,7 @@ All features, including buying and sharing, are not real and are just for demons
         <!-- USERNAME FIELD -->
         <input class="name" type="text" name="username"
                id="id_username" placeholder="Username"
-               value="{{ form.username.value }}" required />
+               value="{{ form.username.value|default_if_none:'' }}" required />
 
         {% if form.username.errors %}
           {% for error in form.username.errors %}

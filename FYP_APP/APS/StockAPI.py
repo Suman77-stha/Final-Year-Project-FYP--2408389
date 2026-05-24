@@ -3,7 +3,9 @@ import os
 import pytz
 import requests
 import yfinance as yf
-api_key = "RH1cObRmVBGqK0a9SmEBdJfs6LT5TsAEvxKbswCB"
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     from django.conf import settings
@@ -104,36 +106,37 @@ def get_stock_data(symbol):
 
     symbol = _normalize_symbol(symbol)
 
-    url = "https://api.stockdata.org/v1/data/quote"
-    # api_key = (
-    #     getattr(settings, "STOCKDATA_API_KEY", None)
-    #     if settings is not None
-    #     else None
-    # ) or os.environ.get("STOCKDATA_API_KEY", "")
+    # Get API key from settings or environment variable
+    api_key = (
+        getattr(settings, "STOCKDATA_API_KEY", None)
+        if settings is not None
+        else None
+    ) or os.environ.get("STOCKDATA_API_KEY", "")
 
+    if not api_key:
+        logger.warning("STOCKDATA_API_KEY not configured, falling back to yfinance")
+        return _get_stock_data_from_yfinance(symbol)
+
+    url = "https://api.stockdata.org/v1/data/quote"
     params = {
         "symbols": symbol,
         "api_token": api_key,
     }
 
     result = None
-    if api_key:
-        try:
-            response = requests.get(url, params=params, timeout=10)
+    try:
+        response = requests.get(url, params=params, timeout=10)
 
-            # 402 = quota/plan issue on stockdata.org
-            if response.status_code == 402:
-                print(f"Primary API quota/plan issue for {symbol} (HTTP 402). Falling back to yfinance.")
-                return _get_stock_data_from_yfinance(symbol)
-
-            response.raise_for_status()
-            result = response.json()
-
-        except requests.RequestException as e:
-            print(f"API error for {symbol}: {e}. Falling back to yfinance.")
+        # 402 = quota/plan issue on stockdata.org
+        if response.status_code == 402:
+            logger.warning(f"Primary API quota/plan issue for {symbol} (HTTP 402). Falling back to yfinance.")
             return _get_stock_data_from_yfinance(symbol)
-    else:
-        print(f"Primary API key missing for {symbol}. Falling back to yfinance.")
+
+        response.raise_for_status()
+        result = response.json()
+
+    except requests.RequestException as e:
+        logger.error(f"API error for {symbol}: {e}. Falling back to yfinance.")
         return _get_stock_data_from_yfinance(symbol)
 
     # ---------------- CHECK DATA EXISTS ----------------

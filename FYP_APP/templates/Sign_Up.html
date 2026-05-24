@@ -1,7 +1,17 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %} Sign Up {% endblock title%}
 {% block content %}
-<link rel="stylesheet" href="/static/CSS/style.css">
+<link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+<header class="navbar">
+    <div class="logo">TradeVision AI</div>
+    <div id="menu-icon">&#9776;</div>
+    <ul class="nav-links">
+        <li><a href="{% url 'Home' %}">Home</a></li>
+        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="active"><a href="{% url 'Sign_Up' %}">Sign Up</a></li>
+    </ul>
+</header>
 <div class="main_contain">
     <div class="container">
 
@@ -49,7 +59,7 @@
 
         <!-- USERNAME -->
         <label for="{{ form.username.id_for_label }}"></label>
-        <input class="name" type="text" name="username" id="id_username"placeholder="Username" value="{{ form.username.value }}" required />
+        <input class="name" type="text" name="username" id="id_username"placeholder="Username" value="{{ form.username.value|default_if_none:'' }}" required />
 
         {% for error in form.username.errors %}
           <span class="text-danger">{{ error }}</span>
@@ -58,7 +68,7 @@
 
         <!-- EMAIL -->
         <label for="{{ form.email.id_for_label }}"></label>
-        <input class="email" type="email" name="{{ form.email.name }}"value="{{ form.email.value }}" placeholder="Email" required />
+        <input class="email" type="email" name="{{ form.email.name }}"value="{{ form.email.value|default_if_none:'' }}" placeholder="Email" required />
 
         {% for error in form.email.errors %}
           <span class="text-danger">{{ error }}</span>
@@ -71,7 +81,7 @@
           <!-- PASSWORD 1 -->
           <label for="{{ form.password1.id_for_label }}"></label>
           <input class="password" type="password" name="{{ form.password1.name }}"
-                 value="{{ form.password1.value }}" placeholder="Password" required />
+                 value="{{ form.password1.value|default_if_none:'' }}" placeholder="Password" required />
 
           {% for error in form.password1.errors %}
             <span class="text-danger">{{ error }}</span>
@@ -81,7 +91,7 @@
           <!-- PASSWORD 2 -->
           <label for="{{ form.password2.id_for_label }}"></label>
           <input class="password" type="password" name="{{ form.password2.name }}"
-                 value="{{ form.password2.value }}" placeholder="Confirm Password" required />
+                 value="{{ form.password2.value|default_if_none:'' }}" placeholder="Confirm Password" required />
 
           {% for error in form.password2.errors %}
             <span class="text-danger">{{ error }}</span>

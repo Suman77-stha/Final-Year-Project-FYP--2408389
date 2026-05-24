@@ -17,6 +17,29 @@ body {
     overflow-x:hidden;
     
 }
+body.theme-light{
+    background: linear-gradient(135deg,#eaf3f8,#d7e6f0,#cddfea);
+    color:#0f172a;
+}
+body.theme-dark{
+    background: linear-gradient(135deg,#020617,#0f172a,#0b1120);
+    color:#e2e8f0;
+}
+body.theme-midnight{
+    background: linear-gradient(135deg,#020b1d,#0a1c3a,#111827);
+    color:#dbeafe;
+}
+body.theme-graphite{
+    background: linear-gradient(135deg,#0f1115,#1a1d24,#111317);
+    color:#e5e7eb;
+}
+body.theme-light .settings-card,
+body.theme-light .crypto-card,
+body.theme-light .chart,
+body.theme-light .left-side,
+body.theme-light .amount{
+    color:#0f172a !important;
+}
 footer {
     text-align:center;
     padding:40px;
@@ -29,15 +52,15 @@ footer {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@latest/css/boxicons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/static/CSS/style.css">
-    <link rel="stylesheet" href="/static/CSS/forgetPassword.css">
-    <link rel="stylesheet" href="/static/CSS/password_reset_done.css">
-    <link rel="stylesheet" href="/static/CSS/password_reset_complete.css">
-    <link rel="stylesheet" href="/static/CSS/password_reset_confirm.css">
+    <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'CSS/forgetPassword.css' %}">
+    <link rel="stylesheet" href="{% static 'CSS/password_reset_done.css' %}">
+    <link rel="stylesheet" href="{% static 'CSS/password_reset_complete.css' %}">
+    <link rel="stylesheet" href="{% static 'CSS/password_reset_confirm.css' %}">
 
 </head>
 
-<body>
+<body class="theme-{{ request.session.settings_theme|default:'system' }}">
 
     <!-- Main Content -->
         {% block content %}
@@ -47,7 +70,7 @@ footer {
 </footer>
     
 
-    <script src="/static/JS/Dashboard.js"></script>
+    <script src="{% static 'JS/Dashboard.js' %}"></script>
 
 </body>
 </html>

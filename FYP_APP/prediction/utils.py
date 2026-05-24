@@ -23,6 +23,80 @@ class HybridEnsemble:
     def predict(self, X):
         return self.xgb_weight * self.xgb_model.predict(X) + (1 - self.xgb_weight) * self.lr_model.predict(X)
 
+
+def _extract_close_series(data):
+    """
+    Return a 1D close-price Series from yfinance output, handling
+    both single-index and multi-index column layouts.
+    """
+    if isinstance(data, pd.Series):
+        return data
+
+    if isinstance(data, pd.DataFrame):
+        if isinstance(data.columns, pd.MultiIndex):
+            if 'Close' in data.columns.get_level_values(0):
+                close_data = data.xs('Close', axis=1, level=0)
+            elif 'Close' in data.columns.get_level_values(1):
+                close_data = data.xs('Close', axis=1, level=1)
+            else:
+                close_data = data.iloc[:, 0]
+        elif 'Close' in data.columns:
+            close_data = data['Close']
+        else:
+            close_data = data.iloc[:, 0]
+
+        if isinstance(close_data, pd.DataFrame):
+            return close_data.iloc[:, 0]
+        return close_data
+
+    return pd.Series(data)
+
+
+def _normalize_price_frame(df, symbol=None):
+    """
+    Normalize yfinance OHLCV output to a single-level DataFrame with
+    standard columns: Open, High, Low, Close, Adj Close, Volume.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError("Expected DataFrame for price data")
+
+    out = df.copy()
+
+    if isinstance(out.columns, pd.MultiIndex):
+        # Handle (field, ticker) and (ticker, field)
+        if 'Close' in out.columns.get_level_values(0):
+            level0 = out.columns.get_level_values(0)
+            fields = ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']
+            available = [f for f in fields if f in level0]
+            if available:
+                out = out.loc[:, available]
+                if isinstance(out.columns, pd.MultiIndex):
+                    out.columns = out.columns.get_level_values(0)
+        elif 'Close' in out.columns.get_level_values(1):
+            close_level = out.columns.get_level_values(1)
+            fields = ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']
+            available = [f for f in fields if f in close_level]
+            if available:
+                out = out.loc[:, out.columns.get_level_values(1).isin(available)]
+                if isinstance(out.columns, pd.MultiIndex):
+                    out.columns = out.columns.get_level_values(1)
+
+    # If duplicate columns remain, keep first occurrence.
+    if getattr(out.columns, "duplicated", None) is not None and out.columns.duplicated().any():
+        out = out.loc[:, ~out.columns.duplicated()]
+
+    required = ['Open', 'High', 'Low', 'Close', 'Volume']
+    missing = [c for c in required if c not in out.columns]
+    if missing:
+        raise ValueError(f"Missing required OHLCV columns for {symbol or 'symbol'}: {missing}")
+
+    # Ensure numeric dtypes for indicators/math.
+    for col in ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors='coerce')
+
+    return out
+
 def download_data(symbol, period="10y"):
     logging.info(f"Downloading {symbol} and Market Indices...")
     df = yf.download(symbol, period=period, progress=False)
@@ -30,18 +104,24 @@ def download_data(symbol, period="10y"):
     ixic = yf.download("^IXIC", period=period, progress=False)
     vix = yf.download("^VIX", period=period, progress=False)
     
-    for x in [df, gspc, ixic, vix]:
-        if isinstance(x.columns, pd.MultiIndex):
-            x.columns = x.columns.droplevel(1)
-            
-    df['SP500_Ret'] = gspc['Close'].pct_change()
-    df['NASDAQ_Ret'] = ixic['Close'].pct_change()
-    df['VIX_Close'] = vix['Close']
-    return df.dropna()
+    df = _normalize_price_frame(df, symbol=symbol)
+
+    # Align and fill to preserve weekend data (e.g. for crypto assets)
+    sp500_close = _extract_close_series(gspc)
+    nasdaq_close = _extract_close_series(ixic)
+    vix_close = _extract_close_series(vix)
+    
+    df['SP500_Ret'] = sp500_close.pct_change().reindex(df.index).ffill().fillna(0)
+    df['NASDAQ_Ret'] = nasdaq_close.pct_change().reindex(df.index).ffill().fillna(0)
+    df['VIX_Close'] = vix_close.reindex(df.index).ffill().bfill().fillna(0)
+
+    # Do not globally drop rows here; rolling features will create warmup NaNs later.
+    # A global dropna at this stage can destructively remove valid weekend crypto rows.
+    return df
 
 def calculate_indicators(df):
     data = df.copy()
-    close = data['Close']
+    close = _extract_close_series(data)
     
     # Base indicators
     data['RSI'] = RSIIndicator(close=close, window=14).rsi()
@@ -73,11 +153,13 @@ def calculate_indicators(df):
     data['momentum'] = close - data['lag_5']
     
     # Z-scores
-    data['close_zscore'] = (close - data['rolling_mean_20']) / data['rolling_std_20']
+    std_20 = data['rolling_std_20'].replace(0, 1e-8).fillna(1e-8)
+    data['close_zscore'] = (close - data['rolling_mean_20']) / std_20
     
     # Trend strength
-    data['Volatility'] = close.rolling(window=20).std()
-    data['trend_strength'] = abs(close - data['SMA']) / data['Volatility']
+    vol = close.rolling(window=20).std().replace(0, 1e-8).fillna(1e-8)
+    data['Volatility'] = vol
+    data['trend_strength'] = abs(close - data['SMA']) / vol
     
     # Drop rows with NA created by indicators
     return data

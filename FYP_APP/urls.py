@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from . import views
+# pyrefly: ignore [missing-import]
+from .import views
 
 urlpatterns = [
     path('Sign_Up/', views.SignUp_View, name='Sign_Up'),
@@ -9,17 +10,15 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('', views.landing_page_view, name='Home'),
-    path('About/', views.about_view, name='About'),
     path('wallet/', views.wallet_view, name='wallet'),
-    path('news/', views.news_dashboard_view, name='news_dashboard'),
     path('profile/', views.user_profile_view, name='profile'),
     path('settings/', views.settings_view, name='settings'),
     path("get-live-price/", views.get_live_price, name="get_live_price"),
     path('AI_Assistance/', views.AI_Assistance_view, name='AI_Assistance'),
     path('api/stock-prediction/', views.stock_prediction_api, name='stock_prediction_api'),
     path('api/watchlist-ai/', views.watchlist_ai_api, name='watchlist_ai_api'),
+    path('api/landing-market-snapshot/', views.landing_market_snapshot_api, name='landing_market_snapshot_api'),
     path('api/wallet-top5-donut/', views.wallet_top5_donut_api, name='wallet_top5_donut_api'),
-    path('trading_bot/', views.trading_bot_view, name='trading_bot'),
     path("api/stock_6month_api/",views.stock_6month_api,name="stock_6month_api"),
     path('chatbot/', views.Ai_Assistance_view, name='chatbot'),
     path('chatbot/clear/', views.clear_chat, name='clear_chat'),

@@ -15,7 +15,6 @@
         <ul class="menu">
             <li><a href="{% url 'dashboard' %}"><i class='bx bx-bar-chart'></i> Overview</a></li>
             <li><a href="{% url 'wallet' %}"><i class='bx bx-wallet'></i> Wallet</a></li>
-            <li><a href="{% url 'trading_bot' %}"><i class='bx bx-trending-up'></i> Trading Bot</a></li>
             <li><a href="{% url 'chatbot' %}"><i class='bx bxs-robot'></i> AI Assistant</a></li>
             <li class="active"><a href="{% url 'settings' %}"><i class='bx bx-cog'></i> Settings</a></li>
         </ul>
@@ -33,38 +32,6 @@
         {% endif %}
 
         <div class="settings-grid">
-            <div class="settings-card">
-                <h4>Preferences</h4>
-                <form method="post" class="settings-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="preferences">
-
-                    <label class="switch-row">
-                        <span>Email Alerts</span>
-                        <input type="checkbox" name="email_alerts" {% if email_alerts %}checked{% endif %}>
-                    </label>
-
-                    <label class="switch-row">
-                        <span>Price Alerts</span>
-                        <input type="checkbox" name="price_alerts" {% if price_alerts %}checked{% endif %}>
-                    </label>
-
-                    <label class="switch-row">
-                        <span>AI Trading Tips</span>
-                        <input type="checkbox" name="ai_tips" {% if ai_tips %}checked{% endif %}>
-                    </label>
-
-                    <label for="theme">Theme</label>
-                    <select id="theme" name="theme">
-                        <option value="system" {% if theme == 'system' %}selected{% endif %}>System Default</option>
-                        <option value="light" {% if theme == 'light' %}selected{% endif %}>Light</option>
-                        <option value="dark" {% if theme == 'dark' %}selected{% endif %}>Dark</option>
-                    </select>
-
-                    <button type="submit">Save Preferences</button>
-                </form>
-            </div>
-
             <div class="settings-card">
                 <h4>User Profile</h4>
                 <p>View and edit your profile information from one place.</p>
@@ -98,4 +65,5 @@
         </div>
     </div>
 </div>
+
 {% endblock content %}

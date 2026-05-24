@@ -2,6 +2,12 @@
     padding: 24px;
 }
 
+.settings-main h3,
+.settings-card h4,
+.settings-card p {
+    color: #e8f4f8;
+}
+
 .settings-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -116,6 +122,86 @@
 
 .profile-icon-link {
     color: inherit;
+}
+
+/* Theme-aware Settings UI */
+body.theme-light .settings-main h3,
+body.theme-light .settings-card h4,
+body.theme-light .settings-card p,
+body.theme-light .settings-form label,
+body.theme-light .switch-row span {
+    color: #0f172a;
+}
+
+body.theme-light .settings-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(15, 23, 42, 0.16);
+}
+
+body.theme-light .settings-form input,
+body.theme-light .settings-form select,
+body.theme-light .switch-row {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(15, 23, 42, 0.18);
+    color: #0f172a;
+}
+
+body.theme-dark .settings-main h3,
+body.theme-dark .settings-card h4,
+body.theme-dark .settings-card p,
+body.theme-dark .settings-form label,
+body.theme-dark .switch-row span {
+    color: #f8fafc;
+}
+
+body.theme-dark .settings-card {
+    background: rgba(15, 23, 42, 0.88);
+    border-color: rgba(148, 163, 184, 0.28);
+}
+
+body.theme-dark .settings-form input,
+body.theme-dark .settings-form select,
+body.theme-dark .switch-row {
+    background: rgba(30, 41, 59, 0.86);
+    border-color: rgba(148, 163, 184, 0.34);
+    color: #f8fafc;
+}
+
+body.theme-midnight .settings-main h3,
+body.theme-midnight .settings-card h4,
+body.theme-midnight .settings-card p,
+body.theme-midnight .settings-form label,
+body.theme-midnight .switch-row span,
+body.theme-graphite .settings-main h3,
+body.theme-graphite .settings-card h4,
+body.theme-graphite .settings-card p,
+body.theme-graphite .settings-form label,
+body.theme-graphite .switch-row span {
+    color: #f3f4f6;
+}
+
+body.theme-midnight .settings-card,
+body.theme-graphite .settings-card {
+    background: rgba(17, 24, 39, 0.9);
+    border-color: rgba(156, 163, 175, 0.26);
+}
+
+body.theme-midnight .settings-form input,
+body.theme-midnight .settings-form select,
+body.theme-midnight .switch-row,
+body.theme-graphite .settings-form input,
+body.theme-graphite .settings-form select,
+body.theme-graphite .switch-row {
+    background: rgba(31, 41, 55, 0.84);
+    border-color: rgba(156, 163, 175, 0.34);
+    color: #f9fafb;
+}
+
+body.theme-dark .settings-form input::placeholder,
+body.theme-dark .settings-form select,
+body.theme-midnight .settings-form input::placeholder,
+body.theme-graphite .settings-form input::placeholder {
+    color: #cbd5e1;
 }
 
 @media (max-width: 900px) {

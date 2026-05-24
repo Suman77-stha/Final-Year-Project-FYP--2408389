@@ -28,7 +28,8 @@ def train_and_save_models(symbol, df_raw):
     data = calculate_indicators(df_raw)
     data['Target_Return'] = data['Close'].pct_change().shift(-1)
     
-    # Drop rows with NaN in features or target
+    # Drop rows with NaN or Inf in features or target
+    data = data.replace([np.inf, -np.inf], np.nan)
     data = data.dropna()
     
     feature_names = [c for c in data.columns if c not in ['Target_Return']]
@@ -93,13 +94,15 @@ def train_and_save_models(symbol, df_raw):
     return True
 
 def get_latest_features(df, feature_names, selected_features, scaler):
-    data = calculate_indicators(df)
-    # The last row contains the features for the current "today"
-    latest_row = data.iloc[-1:]
+    # Slice the dataframe to the last 200 rows for indicator calculation speedup
+    df_slice = df.iloc[-200:]
+    data = calculate_indicators(df_slice)
     
-    # If there are NAs due to shifting at the very end, ffill
-    if latest_row.isna().sum().sum() > 0:
-        latest_row = latest_row.fillna(method='ffill')
+    # Forward fill then backward fill the entire slice to resolve NaNs cleanly
+    data_filled = data.ffill().bfill()
+    
+    # Extract the last row containing features for the current "today"
+    latest_row = data_filled.iloc[-1:]
         
     X_all = latest_row[feature_names].values
     X_scaled = scaler.transform(X_all)
@@ -108,6 +111,14 @@ def get_latest_features(df, feature_names, selected_features, scaler):
     X_selected = df_scaled[selected_features].values
     
     return X_selected
+
+
+def _get_next_market_date(last_date, symbol):
+    next_date = last_date + pd.Timedelta(days=1)
+    if "-" not in symbol:
+        while next_date.weekday() >= 5:
+            next_date += pd.Timedelta(days=1)
+    return next_date
 
 def predict(symbol="ETH-USD", future_days=7):
     start_time = time.time()
@@ -155,6 +166,7 @@ def predict(symbol="ETH-USD", future_days=7):
     
     last_date = working_df.index[-1]
     
+    indicator_window = 200
     for i in range(future_days):
         # 1. Get features for the current end of working_df
         X_latest = get_latest_features(working_df, all_features, selected_features, scaler)
@@ -167,10 +179,7 @@ def predict(symbol="ETH-USD", future_days=7):
         next_close = last_close * (1 + pred_return)
         
         # 4. Create dummy row for tomorrow to allow recursive indicator calculation
-        next_date = last_date + pd.Timedelta(days=1)
-        # Skip weekends for stocks if needed, but keeping it simple chronological sequence
-        if next_date.weekday() >= 5 and "-" not in symbol: # Rough stock vs crypto logic
-            next_date += pd.Timedelta(days=(7 - next_date.weekday()))
+        next_date = _get_next_market_date(last_date, symbol)
             
         future_predictions.append(next_close)
         future_dates.append(next_date)
@@ -187,7 +196,7 @@ def predict(symbol="ETH-USD", future_days=7):
             'VIX_Close': [working_df['VIX_Close'].iloc[-1]]
         }, index=[next_date])
         
-        working_df = pd.concat([working_df, new_row])
+        working_df = pd.concat([working_df, new_row]).iloc[-indicator_window:]
         last_date = next_date
         
     # Generate Plots

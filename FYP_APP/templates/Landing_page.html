@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %} Home {% endblock title %}
 
 {% block content %}
@@ -9,8 +9,7 @@
     <div class="logo">TradeVision AI</div>
     <div id="menu-icon">&#9776;</div>
     <ul class="nav-links">
-        <li><a href="{% url 'Home' %}">Home</a></li>
-        <li><a href="{% url 'About' %}">About</a></li>
+        <li class = "active"><a href="{% url 'Home' %}">Home</a></li>
         <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
         <li><a href="{% url 'Sign_In' %}">Sign In</a></li>
     </ul>
@@ -32,40 +31,41 @@
 <section class="features" id="features">
     <h2>Powerful AI-Driven Trading Intelligence</h2>
     <p class="section-desc">
-        Our system integrates machine learning, automation, and real-time 
-        analytics to transform stock market decision-making.
+        Trade Vision AI combines live market feeds, ensemble forecasting,
+        portfolio simulation, and AI assistance to support smarter
+        day-to-day trading decisions.
     </p>
 
     <div class="feature-grid">
 
         <div class="feature-card">
-            <h3>AI Price Prediction</h3>
-            <p>Advanced LSTM models forecast stock trends using historical data analysis.</p>
+            <h3>Ensemble Price Forecasting</h3>
+            <p>Hybrid XGBoost + Linear Regression models generate short-term forecasts with confidence metrics.</p>
         </div>
 
         <div class="feature-card">
             <h3>Real-Time Market Data</h3>
-            <p>Live API integration ensures up-to-date market prices and insights.</p>
+            <p>Live stock quotes are fetched through API integration with resilient fallback handling for continuity.</p>
         </div>
 
         <div class="feature-card">
-            <h3>Buy/Sell Signals</h3>
-            <p>AI-based recommendation engine generates intelligent trading decisions.</p>
+            <h3>AI Watchlist Signals</h3>
+            <p>Dashboard watchlist cards provide BUY/HOLD/SELL guidance with trend and confidence insights.</p>
         </div>
 
         <div class="feature-card">
-            <h3>Voice Assistant</h3>
-            <p>NLP-powered voice commands for seamless and hands-free trading interaction.</p>
+            <h3>AI Chat + Voice Input</h3>
+            <p>Context-aware NLP assistant answers price, forecast, risk, and portfolio questions with optional voice input.</p>
         </div>
 
         <div class="feature-card">
-            <h3>Auto Trading Bot</h3>
-            <p>Automated execution of trades with built-in risk management strategies.</p>
+            <h3>Virtual Trading & Wallet</h3>
+            <p>Here you can buy and sell shares using dummy money with a simulated wallet, tracked positions, and transaction history.</p>
         </div>
 
         <div class="feature-card">
-            <h3>Risk Dashboard</h3>
-            <p>Interactive visual analytics for tracking performance and minimizing risk.</p>
+            <h3>Portfolio Analytics Dashboard</h3>
+            <p>Interactive charts summarize holdings, P/L movement, allocations, and recent trading activity.</p>
         </div>
 
     </div>
@@ -73,9 +73,7 @@
 
 <!-- ================= MARKET TICKER ================= -->
 <div class="ticker">
-    <span>
-        NASDAQ ▲ 15,230 | S&P 500 ▲ 4,810 | AAPL ▲ 2.4% | TSLA ▼ 1.2% | BTC ▲ 3.5% |
-    </span>
+    <span id="market-ticker-text">Loading live market data...</span>
 </div>
 
 <!-- ================= DASHBOARD PREVIEW ================= -->
@@ -86,27 +84,27 @@
         <div class="preview-grid">
             <div class="card">
                 <h3>Live Market</h3>
-                <p>NASDAQ: 15,230 ▲</p>
-                <p>S&P 500: 4,810 ▲</p>
-                <p>BTC: $63,200 ▲</p>
+                <p id="live-nasdaq">NASDAQ: --</p>
+                <p id="live-sp500">S&P 500: --</p>
+                <p id="live-btc">BTC: --</p>
             </div>
             <div class="card">
                 <h3>AI Prediction</h3>
-                <p>Stock: AAPL</p>
-                <p>Trend: <span class="bullish">Bullish</span></p>
-                <p>Confidence: 82%</p>
+                <p id="pred-stock">Stock: AAPL</p>
+                <p id="pred-trend">Trend: <span class="bullish">Neutral</span></p>
+                <p id="pred-confidence">Confidence: --%</p>
             </div>
             <div class="card">
                 <h3>Recommendation</h3>
-                <p>Signal: <span class="buy">BUY</span></p>
-                <p>Risk Level: Medium</p>
-                <p>RSI indicates oversold</p>
+                <p id="rec-signal">Signal: <span class="buy">HOLD</span></p>
+                <p id="rec-risk">Risk Level: --</p>
+                <p id="rec-reason">Analyzing live momentum...</p>
             </div>
             <div class="card">
                 <h3>Portfolio</h3>
-                <p>Total Value: $24,500</p>
-                <p>Profit: +8.2%</p>
-                <p>Active Trades: 6</p>
+                <p id="pf-value">Total Value: --</p>
+                <p id="pf-profit">Profit: --</p>
+                <p id="pf-active">Active Assets: --</p>
             </div>
         </div>
     </div>
@@ -135,6 +133,77 @@ const navLinks = document.querySelector('.nav-links');
 menuIcon.addEventListener('click', ()=>{
     navLinks.classList.toggle('active');
 });
+
+/* Landing Market Snapshot */
+function fmtNumber(n) {
+    const val = Number(n || 0);
+    return val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function fmtSignedPercent(v) {
+    const n = Number(v || 0);
+    const sign = n > 0 ? '+' : '';
+    return `${sign}${n.toFixed(2)}%`;
+}
+
+function trendArrow(v) {
+    const n = Number(v || 0);
+    return n > 0 ? '?' : n < 0 ? '?' : '•';
+}
+
+function updateTicker(data) {
+    const tickerNode = document.getElementById('market-ticker-text');
+    if (!tickerNode || !Array.isArray(data)) return;
+
+    tickerNode.textContent = data.map(item => {
+        const price = item.label === 'BTC' ? `$${fmtNumber(item.price)}` : fmtNumber(item.price);
+        return `${item.label} ${trendArrow(item.change_pct)} ${price} (${fmtSignedPercent(item.change_pct)})`;
+    }).join(' | ') + ' |';
+}
+
+function updateCards(cards) {
+    if (!cards) return;
+
+    const live = cards.live_market || {};
+    const pred = cards.ai_prediction || {};
+    const rec = cards.recommendation || {};
+    const pf = cards.portfolio_proxy || {};
+
+    document.getElementById('live-nasdaq').textContent = `NASDAQ: ${fmtNumber(live.nasdaq?.price)} ${trendArrow(live.nasdaq?.change_pct)}`;
+    document.getElementById('live-sp500').textContent = `S&P 500: ${fmtNumber(live.sp500?.price)} ${trendArrow(live.sp500?.change_pct)}`;
+    document.getElementById('live-btc').textContent = `BTC: $${fmtNumber(live.btc?.price)} ${trendArrow(live.btc?.change_pct)}`;
+
+    document.getElementById('pred-stock').textContent = `Stock: ${pred.symbol || 'AAPL'}`;
+    document.getElementById('pred-trend').innerHTML = `Trend: <span class="bullish">${pred.trend || 'Neutral'}</span>`;
+    document.getElementById('pred-confidence').textContent = `Confidence: ${pred.confidence ?? '--'}%`;
+
+    const signalClass = (rec.signal || '').toUpperCase() === 'BUY' ? 'buy' : ((rec.signal || '').toUpperCase() === 'SELL' ? 'sell' : 'bullish');
+    document.getElementById('rec-signal').innerHTML = `Signal: <span class="${signalClass}">${rec.signal || 'HOLD'}</span>`;
+    document.getElementById('rec-risk').textContent = `Risk Level: ${rec.risk_level || '--'}`;
+    document.getElementById('rec-reason').textContent = rec.reason || 'No recommendation available.';
+
+    document.getElementById('pf-value').textContent = `Total Value: $${fmtNumber(pf.total_value)}`;
+    document.getElementById('pf-profit').textContent = `Profit: ${fmtSignedPercent(pf.profit_pct)}`;
+    document.getElementById('pf-active').textContent = `Active Assets: ${pf.active_assets ?? '--'}`;
+}
+
+async function loadLandingSnapshot() {
+    try {
+        const res = await fetch("{% url 'landing_market_snapshot_api' %}");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        updateTicker(data.ticker);
+        updateCards(data.cards);
+    } catch (error) {
+        console.error('Landing snapshot load failed:', error);
+        const tickerNode = document.getElementById('market-ticker-text');
+        if (tickerNode) tickerNode.textContent = 'Live data unavailable right now. Please refresh.';
+    }
+}
+
+loadLandingSnapshot();
+setInterval(loadLandingSnapshot, 60000);
 </script>
 
 {% endblock content %}
+
