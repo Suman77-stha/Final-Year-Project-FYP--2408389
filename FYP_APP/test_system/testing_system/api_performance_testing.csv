@@ -1,0 +1,6 @@
+Endpoint,Avg Response Time (ms),Max Response Time (ms),Error Rate (%)
+/api/predict/,125.4,210.5,0.0
+/api/quote/ (cached),12.3,24.1,0.0
+/api/chatbot/,345.2,510.8,0.0
+/api/portfolio/,85.6,150.2,0.0
+/auth/login/,150.3,220.4,0.0

@@ -1,0 +1,7 @@
+Intent Category,Test Queries,Correctly Classified,Accuracy (%)
+Stock price query,20,19,95.0
+Portfolio query,15,14,93.3
+Recommendation request,20,18,90.0
+Historical data query,10,9,90.0
+Out-of-scope / rejection,15,14,93.3
+TOTAL,80,74,92.5

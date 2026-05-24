@@ -1,0 +1,7 @@
+Model (A/B),MAE ($),RMSE ($),Training Time (s),Inference Time (ms)
+XGBoost (primary),2.74,4.01,1.54,2.45
+LSTM,3.12,4.27,15.21,14.50
+ARIMA Baseline,3.00,4.24,3.12,1.15
+Native,2.75,4.01,0.00,0.05
+Linear Regression,2.78,4.04,0.01,0.12
+Linear Regression + XGBoost,2.74,4.00,1.55,2.56
