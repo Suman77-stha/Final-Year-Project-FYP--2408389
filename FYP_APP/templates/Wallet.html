@@ -2,6 +2,10 @@
 {% block title %} Wallet {% endblock title %}
 {% load static %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
 <link rel="stylesheet" href="/static/CSS/wallet.css">
 <link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">

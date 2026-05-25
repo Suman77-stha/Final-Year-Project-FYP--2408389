@@ -70,6 +70,7 @@ STATICFILES_DIRS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -132,6 +133,7 @@ else:
                 'PASSWORD': os.getenv('DB_PASSWORD', ''),
                 'HOST': os.getenv('DB_HOST', '127.0.0.1'),
                 'PORT': os.getenv('DB_PORT', '5432'),
+                'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '600')),
             }
         }
     else:
@@ -200,6 +202,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
 
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
@@ -217,7 +221,7 @@ if not DEBUG:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_AGE = 3600  # 1 hour
-    SESSION_SAVE_EVERY_REQUEST = True
+    SESSION_SAVE_EVERY_REQUEST = os.environ.get('SESSION_SAVE_EVERY_REQUEST', 'False').lower() == 'true'
     
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True

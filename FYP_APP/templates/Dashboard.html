@@ -2,13 +2,15 @@
 {% block title %} Dashboard {% endblock title %}
 {% load static %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
 
 <link rel="stylesheet" href="/static/CSS/Overview.css">
 <link rel="stylesheet" href="{% static 'CSS/dashboard_pro.css' %}">
 <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="header">
 

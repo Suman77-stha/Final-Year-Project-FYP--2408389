@@ -51,12 +51,12 @@ footer {
     <title>{% block title %}User Authentication{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@latest/css/boxicons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
     <link rel="stylesheet" href="{% static 'CSS/forgetPassword.css' %}">
     <link rel="stylesheet" href="{% static 'CSS/password_reset_done.css' %}">
     <link rel="stylesheet" href="{% static 'CSS/password_reset_complete.css' %}">
     <link rel="stylesheet" href="{% static 'CSS/password_reset_confirm.css' %}">
+    {% block extra_head %}{% endblock %}
 
 </head>
 
@@ -69,8 +69,5 @@ footer {
     © 2026 Trade Vision AI | Intelligent Stock Trading System
 </footer>
     
-
-    <script src="{% static 'JS/Dashboard.js' %}"></script>
-
 </body>
 </html>

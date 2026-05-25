@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/watchlist-ai/', views.watchlist_ai_api, name='watchlist_ai_api'),
     path('api/landing-market-snapshot/', views.landing_market_snapshot_api, name='landing_market_snapshot_api'),
     path('api/wallet-top5-donut/', views.wallet_top5_donut_api, name='wallet_top5_donut_api'),
+    path('api/portfolio/', views.portfolio_api, name='portfolio_api'),
     path("api/stock_6month_api/",views.stock_6month_api,name="stock_6month_api"),
     path('chatbot/', views.Ai_Assistance_view, name='chatbot'),
     path('chatbot/clear/', views.clear_chat, name='clear_chat'),

@@ -35,6 +35,13 @@ class RateLimitMiddleware:
         self.get_response = get_response
         
     def __call__(self, request):
+        if (
+            request.path.startswith('/static/')
+            or request.path == '/health/'
+            or request.path == '/favicon.ico'
+        ):
+            return self.get_response(request)
+
         # Get client identifier (IP or user ID)
         client_id = self.get_client_id(request)
         
@@ -42,7 +49,8 @@ class RateLimitMiddleware:
         limit = self.get_rate_limit(request)
         
         # Check rate limit
-        if self.is_rate_limited(client_id, limit):
+        request_count = self.increment_and_get_request_count(client_id)
+        if request_count > limit:
             logger.warning(f"Rate limit exceeded for {client_id} on {request.path}")
             return JsonResponse(
                 {
@@ -52,10 +60,7 @@ class RateLimitMiddleware:
                 },
                 status=429
             )
-        
-        # Increment request counter
-        self.increment_request_count(client_id)
-        
+
         return self.get_response(request)
     
     def get_client_id(self, request):
@@ -98,21 +103,20 @@ class RateLimitMiddleware:
         # Default limit
         return self.DEFAULT_LIMIT
     
-    def is_rate_limited(self, client_id, limit):
+    def increment_and_get_request_count(self, client_id):
         """
-        Check if client has exceeded rate limit.
-        """
-        cache_key = f"rate_limit:{client_id}"
-        request_count = cache.get(cache_key, 0)
-        return request_count >= limit
-    
-    def increment_request_count(self, client_id):
-        """
-        Increment request counter for client.
+        Increment request counter and return current count with minimal cache ops.
         """
         cache_key = f"rate_limit:{client_id}"
-        request_count = cache.get(cache_key, 0)
-        cache.set(cache_key, request_count + 1, self.DURATION)
+
+        if cache.add(cache_key, 1, self.DURATION):
+            return 1
+
+        try:
+            return cache.incr(cache_key)
+        except ValueError:
+            cache.set(cache_key, 1, self.DURATION)
+            return 1
     
     def get_retry_after(self, client_id):
         """
@@ -201,7 +205,12 @@ class RequestLoggingMiddleware:
         self.get_response = get_response
         
     def __call__(self, request):
-        if request.path.startswith('/static/') or request.path == '/health/':
+        if (
+            request.path.startswith('/static/')
+            or request.path == '/health/'
+            or request.path.startswith('/FYP/Sign_In/')
+            or request.path.startswith('/FYP/Sign_Up/')
+        ):
             return self.get_response(request)
 
         # Log request details

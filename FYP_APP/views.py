@@ -21,7 +21,13 @@ import requests
 import numpy as np
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
+from django.db.models import Case, When, Value, DecimalField
 from collections import defaultdict
+import logging
+import threading
+from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 # ---------------- FORGOT PASSWORD ----------------
 def forgot_password(request):
@@ -106,6 +112,23 @@ def _send_signup_otp_email(username, email, otp):
     )
 
 
+def _email_is_configured():
+    return bool(settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD and settings.DEFAULT_FROM_EMAIL)
+
+
+def _send_signup_otp_email_async(username, email, otp):
+    """
+    Send OTP email in background so signup endpoint stays fast.
+    """
+    def _runner():
+        try:
+            _send_signup_otp_email(username, email, otp)
+        except Exception:
+            logger.exception("Async OTP email failed for user=%s email=%s", username, email)
+
+    threading.Thread(target=_runner, daemon=True).start()
+
+
 def SignUp_View(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -128,15 +151,15 @@ def SignUp_View(request):
                 "expires_at": expires_at.isoformat(),
             }
 
-            try:
-                _send_signup_otp_email(username, email, otp)
-            except Exception:
+            if not _email_is_configured():
                 request.session.pop(OTP_SESSION_KEY, None)
                 return render(
                     request,
                     'Sign_Up.html',
-                    {'form': form, 'error': 'OTP email could not be sent. Check email SMTP settings.'}
+                    {'form': form, 'error': 'OTP email service is not configured. Set EMAIL_HOST_USER and EMAIL_HOST_PASSWORD on Render.'}
                 )
+
+            _send_signup_otp_email_async(username, email, otp)
 
             return redirect('verify_signup_otp')
     else:
@@ -154,20 +177,20 @@ def verify_signup_otp(request):
         action = request.POST.get("action")
 
         if action == "resend":
+            if not _email_is_configured():
+                return render(
+                    request,
+                    'verify_signup_otp.html',
+                    {'email': otp_data["email"], 'error': 'OTP email service is not configured. Please contact support.'}
+                )
+
             otp = _generate_otp()
             expires_at = timezone.now() + timedelta(minutes=OTP_VALIDITY_MINUTES)
             otp_data["otp"] = otp
             otp_data["expires_at"] = expires_at.isoformat()
             request.session[OTP_SESSION_KEY] = otp_data
 
-            try:
-                _send_signup_otp_email(otp_data["username"], otp_data["email"], otp)
-            except Exception:
-                return render(
-                    request,
-                    'verify_signup_otp.html',
-                    {'email': otp_data["email"], 'error': 'Failed to resend OTP email.'}
-                )
+            _send_signup_otp_email_async(otp_data["username"], otp_data["email"], otp)
 
             return render(
                 request,
@@ -386,6 +409,8 @@ def dashboard_view(request):
                     quantity=quantity,
                     total=total
                 )
+                cache.delete(f"wallet_top5_donut:{request.user.id}")
+                cache.delete(f"portfolio_api:{request.user.id}")
 
                 messages.success(request, "Stock bought successfully")
             else:
@@ -414,6 +439,8 @@ def dashboard_view(request):
                     quantity=quantity,
                     total=total
                 )
+                cache.delete(f"wallet_top5_donut:{request.user.id}")
+                cache.delete(f"portfolio_api:{request.user.id}")
 
                 messages.success(request, "Stock sold successfully")
             else:
@@ -641,7 +668,47 @@ def wallet_view(request):
 
 @login_required
 def wallet_top5_donut_api(request):
-    return JsonResponse(_build_user_portfolio_donut_data(request.user, limit=5))
+    cache_key = f"wallet_top5_donut:{request.user.id}"
+    payload = cache.get(cache_key)
+    if payload is None:
+        payload = _build_user_portfolio_donut_data(request.user, limit=5)
+        cache.set(cache_key, payload, 30)
+    return JsonResponse(payload)
+
+
+@login_required
+def portfolio_api(request):
+    cache_key = f"portfolio_api:{request.user.id}"
+    payload = cache.get(cache_key)
+    if payload is None:
+        positions = Portfolio.objects.filter(user=request.user, quantity__gt=0).values("symbol", "quantity", "avg_price")
+        positions_list = list(positions)
+        tx_summary = Transaction.objects.filter(user=request.user).aggregate(
+            buy_total=Sum(
+                Case(
+                    When(transaction_type="BUY", then="total"),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=12, decimal_places=3),
+                )
+            ),
+            sell_total=Sum(
+                Case(
+                    When(transaction_type="SELL", then="total"),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=12, decimal_places=3),
+                )
+            ),
+        )
+
+        payload = {
+            "positions": positions_list,
+            "positions_count": len(positions_list),
+            "buy_total": float(tx_summary["buy_total"] or 0),
+            "sell_total": float(tx_summary["sell_total"] or 0),
+        }
+        cache.set(cache_key, payload, 30)
+
+    return JsonResponse(payload)
     
 @login_required(login_url='Sign_In')
 def user_profile_view(request):

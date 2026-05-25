@@ -35,6 +35,11 @@ class New_Stock_Data(models.Model):
     def __str__(self):
         return f"{self.symbol} - {self.nepal_dt}"
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['symbol', 'nepal_dt']),
+        ]
+
 
 # ---------------- WALLET ---------------- #
 
@@ -126,6 +131,12 @@ class Transaction(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['user', 'transaction_type', 'created_at']),
+        ]
+
 # ---------------- WATCHLIST ---------------- #
 
 class Watchlist(models.Model):
@@ -153,6 +164,9 @@ class Watchlist(models.Model):
     class Meta:
         unique_together = ('user', 'symbol')
         ordering = ['-added_at']
+        indexes = [
+            models.Index(fields=['user', '-added_at']),
+        ]
 
     def __str__(self):
         return f"{self.user.username} → {self.symbol}"
