@@ -159,7 +159,16 @@ def SignUp_View(request):
                     {'form': form, 'error': 'OTP email service is not configured. Set EMAIL_HOST_USER and EMAIL_HOST_PASSWORD on Render.'}
                 )
 
-            _send_signup_otp_email_async(username, email, otp)
+            try:
+                _send_signup_otp_email(username, email, otp)
+            except Exception as exc:
+                request.session.pop(OTP_SESSION_KEY, None)
+                logger.exception("Signup OTP send failed for user=%s email=%s", username, email)
+                return render(
+                    request,
+                    'Sign_Up.html',
+                    {'form': form, 'error': f'OTP email could not be sent. SMTP error: {exc}'}
+                )
 
             return redirect('verify_signup_otp')
     else:
@@ -190,7 +199,15 @@ def verify_signup_otp(request):
             otp_data["expires_at"] = expires_at.isoformat()
             request.session[OTP_SESSION_KEY] = otp_data
 
-            _send_signup_otp_email_async(otp_data["username"], otp_data["email"], otp)
+            try:
+                _send_signup_otp_email(otp_data["username"], otp_data["email"], otp)
+            except Exception as exc:
+                logger.exception("Resend OTP failed for user=%s email=%s", otp_data["username"], otp_data["email"])
+                return render(
+                    request,
+                    'verify_signup_otp.html',
+                    {'email': otp_data["email"], 'error': f'Failed to resend OTP email. SMTP error: {exc}'}
+                )
 
             return render(
                 request,
