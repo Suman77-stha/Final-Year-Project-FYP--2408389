@@ -23,7 +23,7 @@ from django.http import JsonResponse
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('health/', lambda request: JsonResponse({"status": "ok"}), name='health'),
-    path('FYP/',include('FYP_APP.urls')),
+    path('',include('FYP_APP.urls')),
 ]
 
 if settings.DEBUG:
