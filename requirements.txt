@@ -1,9 +1,11 @@
 django-cors-headers>=4.3.0
 # Django Core
-Django>=6.0,<7.0
+Django>=5.2,<6.0
 gunicorn>=21.0.0
 psycopg2-binary>=2.9.0
 python-dotenv>=1.0.0
+whitenoise>=6.7.0
+dj-database-url>=2.2.0
 
 # Database & Caching
 django-redis>=5.4.0
@@ -45,4 +47,3 @@ django-anymail>=10.0
 
 # Utilities
 pytz>=2023.3
-mysqlclient>=2.1.0
