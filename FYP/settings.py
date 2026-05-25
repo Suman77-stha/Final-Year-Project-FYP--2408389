@@ -142,11 +142,6 @@ else:
             }
         }
 
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://tradevisionai-oaai.onrender.com"
-]
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -226,7 +221,7 @@ if not DEBUG:
     
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
-    CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+    CSRF_TRUSTED_ORIGINS = [origin for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if origin]
     
     # HSTS
     SECURE_HSTS_SECONDS = 31536000  # 1 year
