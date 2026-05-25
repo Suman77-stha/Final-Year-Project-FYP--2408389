@@ -183,10 +183,10 @@ class SecurityHeadersMiddleware:
             response['Content-Security-Policy'] = (
                 "default-src 'self'; "
                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-                "font-src 'self' https://fonts.gstatic.com; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
+                "font-src 'self' https://fonts.gstatic.com https://unpkg.com; "
                 "img-src 'self' data: https:; "
-                "connect-src 'self' https://api.stockdata.org; "
+                "connect-src 'self' https://api.stockdata.org https://cdn.jsdelivr.net; "
             )
         
         return response
@@ -201,6 +201,9 @@ class RequestLoggingMiddleware:
         self.get_response = get_response
         
     def __call__(self, request):
+        if request.path.startswith('/static/') or request.path == '/health/':
+            return self.get_response(request)
+
         # Log request details
         logger.info(
             f"Request: {request.method} {request.path} | "
