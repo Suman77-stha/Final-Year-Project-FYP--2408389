@@ -45,3 +45,4 @@ django-anymail>=10.0
 
 # Utilities
 pytz>=2023.3
+mysqlclient>=2.1.0
