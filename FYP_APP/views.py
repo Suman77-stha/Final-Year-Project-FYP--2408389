@@ -100,9 +100,9 @@ def _generate_otp():
 def _send_signup_otp_email(username, email, otp):
     resend.Emails.send({
         "from": "onboarding@resend.dev",
-        "to": email,
-        "subject": "Your OTP Code",
-        "html": f"<h1>Your OTP is {otp}</h1>"
+        "to": "np03cs4a230174@heraldcollege.edu.np",
+        "subject": f"Your OTP Code (intended for {email})",
+        "html": f"<h1>Your OTP is {otp}</h1><p>This email was originally intended for {email}</p>"
     })
     return True
 
