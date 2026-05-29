@@ -47,3 +47,4 @@ django-anymail>=10.0
 
 # Utilities
 pytz>=2023.3
+resend>=0.7.0

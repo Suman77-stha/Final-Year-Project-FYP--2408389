@@ -26,6 +26,9 @@ from collections import defaultdict
 import logging
 import threading
 from django.core.cache import cache
+import resend
+
+resend.api_key = "re_YAgvNFuT_8MLAkCKotZoNtdDC8GoVzdm1"
 
 logger = logging.getLogger(__name__)
 
@@ -95,25 +98,17 @@ def _generate_otp():
 
 
 def _send_signup_otp_email(username, email, otp):
-    if not settings.DEFAULT_FROM_EMAIL or not settings.EMAIL_HOST_PASSWORD:
-        raise ValueError("Email SMTP credentials are not configured.")
-
-    send_mail(
-        "Your Trade Vision AI OTP Code",
-        (
-            f"Hi {username},\n\n"
-            f"Your OTP for account verification is: {otp}\n"
-            f"This code is valid for {OTP_VALIDITY_MINUTES} minutes.\n\n"
-            "If you did not request this, please ignore this email."
-        ),
-        settings.DEFAULT_FROM_EMAIL,
-        [email],
-        fail_silently=False,
-    )
+    resend.Emails.send({
+        "from": "onboarding@resend.dev",
+        "to": email,
+        "subject": "Your OTP Code",
+        "html": f"<h1>Your OTP is {otp}</h1>"
+    })
+    return True
 
 
 def _email_is_configured():
-    return bool(settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD and settings.DEFAULT_FROM_EMAIL)
+    return True
 
 
 def _send_signup_otp_email_async(username, email, otp):
