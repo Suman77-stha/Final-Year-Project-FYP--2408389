@@ -269,7 +269,7 @@ def verify_signup_otp(request):
             )
 
         request.session.pop(OTP_SESSION_KEY, None)
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         return redirect('dashboard')
 
     return render(request, 'verify_signup_otp.html', {'email': otp_data["email"]})
