@@ -43,7 +43,10 @@ function createOrUpdateMiniChart(symbol, canvas) {
         return;
     }
     fetch(`/api/stock-prediction/?symbol=${symbol}&range=7D`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+            return res.json();
+        })
         .then(data => {
             const closePrices = data.close_prices || [];
             const futurePrices = data.future_days || [];
@@ -113,7 +116,10 @@ function loadMainChart(symbol, range = "7D") {
     }
 
     fetch(`/api/stock-prediction/?symbol=${symbol}&range=${range}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+            return res.json();
+        })
         .then(data => {
 
             const closePrices = data.close_prices || [];
@@ -302,8 +308,11 @@ function loadMainChart(symbol, range = "7D") {
             const symbol = symbolInput.value.trim().toUpperCase();
             if (!symbol) return;
 
-            fetch(`/FYP/get-live-price/?symbol=${symbol}`)
-                .then(res => res.json())
+            fetch(`/get-live-price/?symbol=${symbol}`)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                    return res.json();
+                })
                 .then(data => {
                     if (data.price !== null && data.price !== undefined) {
                         priceInput.value = parseFloat(data.price).toFixed(2);
@@ -377,7 +386,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!watchlistAiLoaded) {
         watchlistAiLoaded = true;
         fetch('/api/watchlist-ai/')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                return res.json();
+            })
             .then(data => {
                 if (data.status === 'success') {
                     const predictions = data.data;
