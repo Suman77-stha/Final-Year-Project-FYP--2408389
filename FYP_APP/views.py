@@ -520,7 +520,7 @@ def dashboard_view(request):
         "portfolio_data": portfolio_data,
     }
 
-    return render(request, "dashboard.html", context)
+    return render(request, "Dashboard.html", context)
 def _build_user_portfolio_donut_data(user, limit=5):
     palette = ["#22B8CF", "#4C4B8C", "#E39D5F", "#FF6B4A", "#5BC0BE"]
 
