@@ -42,7 +42,7 @@ function createOrUpdateMiniChart(symbol, canvas) {
         updateMiniChart(symbol, miniChartCache[symbol]);
         return;
     }
-    fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=7D`)
+    fetch(`/api/stock-prediction/?symbol=${symbol}&range=7D`)
         .then(res => res.json())
         .then(data => {
             const closePrices = data.close_prices || [];
@@ -112,7 +112,7 @@ function loadMainChart(symbol, range = "7D") {
         canvas.style.display = "none";
     }
 
-    fetch(`/FYP/api/stock-prediction/?symbol=${symbol}&range=${range}`)
+    fetch(`/api/stock-prediction/?symbol=${symbol}&range=${range}`)
         .then(res => res.json())
         .then(data => {
 
@@ -376,7 +376,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Fetch AI predictions for watchlist dynamically
     if (!watchlistAiLoaded) {
         watchlistAiLoaded = true;
-        fetch('/FYP/api/watchlist-ai/')
+        fetch('/api/watchlist-ai/')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {

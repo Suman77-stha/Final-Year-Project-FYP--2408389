@@ -331,7 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function refreshWalletDonut() {
         try {
-            const res = await fetch("/FYP/api/wallet-top5-donut/");
+            const res = await fetch("/api/wallet-top5-donut/");
             if (!res.ok) return;
             const payload = await res.json();
             renderWalletDonut(payload);
